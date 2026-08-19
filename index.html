@@ -634,6 +634,96 @@
         .status-pill.critical { background: rgba(224, 90, 82, 0.16);  color: #ef8079; border: 1px solid rgba(224,90,82,0.38); }
         .status-pill.neutral  { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); }
 
+        /* ============ PLANNER ============ */
+        .planner-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; margin: 18px 0 16px;
+        }
+        .planner-count { font-size: 0.85rem; color: var(--text-secondary); }
+
+        .planner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+        }
+
+        .planner-day {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 130px;
+        }
+        .planner-day.today { border-color: rgba(212, 175, 55, 0.55); }
+
+        .planner-day-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .planner-day-name {
+            font-size: 0.82rem; font-weight: 600; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.6px;
+        }
+        .planner-add {
+            width: 24px; height: 24px; padding: 0; line-height: 1;
+            font-size: 1rem; color: var(--text-muted);
+            background: transparent; border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer;
+        }
+        .planner-add:hover { color: var(--primary); border-color: var(--primary); background: rgba(212,175,55,0.1); }
+
+        .planner-empty { font-size: 0.82rem; color: var(--text-muted); padding: 6px 0; }
+
+        .planner-slot {
+            padding: 9px 11px; margin-bottom: 8px;
+            background: rgba(212, 175, 55, 0.08);
+            border-left: 3px solid var(--primary);
+            border-radius: 6px;
+        }
+        .planner-slot-top {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+        }
+        .planner-slot-time {
+            font-size: 0.9rem; font-weight: 700; color: var(--primary);
+            font-variant-numeric: tabular-nums;
+        }
+        .planner-slot-name {
+            font-size: 0.86rem; color: var(--text-primary); line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+        .planner-slot-mods { font-size: 0.78rem; flex: 1; }
+        .planner-slot-actions { display: flex; gap: 2px; flex-shrink: 0; }
+        .planner-slot-actions button {
+            width: 22px; height: 22px; padding: 0; line-height: 1;
+            font-size: 0.75rem; color: var(--text-muted);
+            background: transparent; border: none; border-radius: 4px; cursor: pointer;
+        }
+        .planner-slot-actions button:hover { color: var(--primary); background: rgba(255,255,255,0.08); }
+
+        /* ============ EDITOR DE HORÁRIOS ============ */
+        .schedule-row {
+            display: grid;
+            grid-template-columns: 1fr 130px 38px;
+            gap: 8px; align-items: center; margin-bottom: 8px;
+        }
+        .schedule-row select, .schedule-row input {
+            width: 100%; padding: 9px 10px;
+            background: #2f2f2f; border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text-primary);
+            font-size: 0.88rem; font-family: inherit; color-scheme: dark;
+        }
+        .schedule-row select:focus, .schedule-row input:focus {
+            outline: none; border-color: var(--primary);
+        }
+        .sched-remove {
+            padding: 9px 0; font-size: 0.85rem; color: var(--danger);
+            background: rgba(224, 90, 82, 0.1); border: 1px solid rgba(224,90,82,0.3);
+            border-radius: 6px; cursor: pointer;
+        }
+        .sched-remove:hover { background: rgba(224, 90, 82, 0.2); }
+        .schedule-empty { font-size: 0.85rem; color: var(--text-muted); padding: 8px 0; }
+
         /* ============ SAVE HINT ============ */
         .save-hint {
             flex: 1;
@@ -1673,6 +1763,44 @@
         </div>
     </div>
 
+    <!-- MODAL: NOVO ATENDIMENTO NO PLANNER -->
+    <div id="plannerAddModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Novo atendimento</div>
+                <button class="modal-close" onclick="closeModal('plannerAddModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Cliente</label>
+                <select id="plannerAddClient"></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dia</label>
+                    <select id="plannerAddDay">
+                        <option value="">Selecione o dia…</option>
+                        <option value="segunda">Segunda</option>
+                        <option value="terca">Terça</option>
+                        <option value="quarta">Quarta</option>
+                        <option value="quinta">Quinta</option>
+                        <option value="sexta">Sexta</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <input type="time" id="plannerAddTime">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="plannerAddHint" class="save-hint"></span>
+                <button class="btn-secondary" onclick="closeModal('plannerAddModal')">Cancelar</button>
+                <button onclick="savePlannerAdd()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ADD SESSION -->
     <div id="addSessionModal" class="modal">
         <div class="modal-content">
@@ -2034,7 +2162,7 @@
             if (stored) {
                 data = JSON.parse(stored);
             }
-            syncWithLocalStorage();
+            if (migrateSchedules()) saveData();
         }
 
         // ============================================
@@ -2095,6 +2223,7 @@
                             modalities: ['Musculação'],
                             day: '',
                             time: '',
+                            schedule: [],
                             origem: 'controle-carga',
                             createdAt: new Date().toISOString()
                         };
@@ -2307,6 +2436,7 @@
             document.getElementById('headerSubtitle').textContent = '';
 
             if (tabName === 'dashboard') renderDashboard();
+            if (tabName === 'planner') renderPlanner();
             if (tabName === 'periodization') renderPeriodization();
             if (tabName === 'planner') renderPlanner();
             if (tabName === 'clientes') renderClientsTab();
@@ -2326,19 +2456,24 @@
                 return;
             }
 
-            container.innerHTML = data.clients.map(client => `
+            container.innerHTML = data.clients.slice().sort((a, b) => a.name.localeCompare(b.name)).map(client => {
+                const horarios = scheduleSummary(client);
+                return `
                 <div class="list-item">
                     <div class="list-item-content">
                         <div class="list-item-title">${client.name}</div>
                         <div class="list-item-subtitle">
                             ${client.modalities.map(m => `<span class="tag">${MODALITIES[m]?.icon} ${m}</span>`).join('')}
                         </div>
+                        <div style="margin-top: 6px; font-size: 0.8rem; color: ${horarios ? 'var(--primary)' : 'var(--text-muted)'};">
+                            🕐 ${horarios || 'sem horário definido'}
+                        </div>
                     </div>
                     <div class="list-item-actions">
                         <button class="btn-secondary btn-small" onclick="openClientDetails('${client.id}')">Editar</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         function openAddClientModal() {
@@ -2366,6 +2501,7 @@
                 modalities,
                 day,
                 time,
+                schedule: (day && time) ? [{ day, time }] : [],
                 createdAt: new Date().toISOString()
             };
 
@@ -2374,6 +2510,46 @@
             closeModal('addClientModal');
             renderClientsTab();
             updateFinanceiroSelects();
+        }
+
+        // ============================================
+        // AGENDA — um cliente pode ter vários dias/horários
+        // ============================================
+        const DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+        // Converte o formato antigo (day/time únicos) para a lista schedule[]
+        function migrateSchedules() {
+            let changed = false;
+            (data.clients || []).forEach(c => {
+                if (!Array.isArray(c.schedule)) {
+                    c.schedule = (c.day && c.time) ? [{ day: c.day, time: c.time }] : [];
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+
+        function sortSchedule(list) {
+            return (list || []).slice().sort((a, b) =>
+                DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) ||
+                String(a.time).localeCompare(String(b.time)));
+        }
+
+        function scheduleSummary(c) {
+            const list = sortSchedule(c.schedule);
+            if (!list.length) return '';
+            return list.map(x => `${DAYS[x.day] || x.day} ${x.time}`).join(' · ');
+        }
+
+        // Todos os atendimentos de um dia, de todos os clientes, ordenados por hora
+        function appointmentsOfDay(day) {
+            const out = [];
+            (data.clients || []).forEach(c => {
+                sortSchedule(c.schedule).forEach((slot, idx) => {
+                    if (slot.day === day) out.push({ client: c, time: slot.time, index: c.schedule.indexOf(slot) });
+                });
+            });
+            return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
         }
 
         function normalizeName(n) {
@@ -2403,32 +2579,67 @@
                         `).join('')}
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Dia</label>
-                        <select id="editClientDay" onchange="markClientDirty()">
-                            <option value="">Selecione o dia…</option>
-                            ${Object.entries(DAYS).map(([key, val]) => `
-                                <option value="${key}" ${client.day === key ? 'selected' : ''}>${val}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Hora</label>
-                        <input type="time" id="editClientTime" value="${client.time || ''}" onchange="markClientDirty()">
-                    </div>
+                <div class="form-group">
+                    <label>Horários fixos na semana</label>
+                    <div id="scheduleEditor"></div>
+                    <button type="button" class="chart-toggle" style="margin-top: 10px;"
+                            onclick="addScheduleRow()">➕ Adicionar horário</button>
                 </div>
 
                 <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--text-primary);">Sessões Registradas</h3>
                 <div id="clientSessions"></div>
             `;
 
+            renderScheduleEditor(client.schedule || []);
             renderClientSessions(clientId);
             clientDirty = false;
             const hint = document.getElementById('clientSaveHint');
             if (hint) { hint.textContent = ''; hint.className = 'save-hint'; }
             document.getElementById('detailsTitle').textContent = client.name;
             document.getElementById('clientDetailsModal').classList.add('active');
+        }
+
+        // ---- Editor de horários (linhas dia + hora) ----
+        function scheduleRowHtml(day, time) {
+            return `
+                <div class="schedule-row">
+                    <select class="sched-day" onchange="markClientDirty()">
+                        <option value="">Dia…</option>
+                        ${DAY_ORDER.map(k => `<option value="${k}" ${day === k ? 'selected' : ''}>${DAYS[k]}</option>`).join('')}
+                    </select>
+                    <input type="time" class="sched-time" value="${time || ''}" onchange="markClientDirty()">
+                    <button type="button" class="sched-remove" title="Remover"
+                            onclick="this.closest('.schedule-row').remove(); markClientDirty();">✕</button>
+                </div>`;
+        }
+
+        function renderScheduleEditor(list) {
+            const el = document.getElementById('scheduleEditor');
+            if (!el) return;
+            const rows = sortSchedule(list);
+            el.innerHTML = rows.length
+                ? rows.map(r => scheduleRowHtml(r.day, r.time)).join('')
+                : '<div class="schedule-empty">Nenhum horário fixo. Clique em “Adicionar horário”.</div>';
+        }
+
+        function addScheduleRow() {
+            const el = document.getElementById('scheduleEditor');
+            if (!el) return;
+            const vazio = el.querySelector('.schedule-empty');
+            if (vazio) vazio.remove();
+            el.insertAdjacentHTML('beforeend', scheduleRowHtml('', ''));
+            markClientDirty();
+        }
+
+        function readScheduleEditor() {
+            const el = document.getElementById('scheduleEditor');
+            if (!el) return [];
+            return Array.from(el.querySelectorAll('.schedule-row'))
+                .map(r => ({
+                    day: r.querySelector('.sched-day').value,
+                    time: r.querySelector('.sched-time').value
+                }))
+                .filter(x => x.day && x.time);
         }
 
         let clientDirty = false;
@@ -2445,8 +2656,7 @@
 
             const name = (document.getElementById('editClientName').value || '').trim();
             const modalities = Array.from(document.querySelectorAll('#clientDetailsModal .edit-modality-checkbox:checked')).map(cb => cb.value);
-            const day = document.getElementById('editClientDay').value;
-            const time = document.getElementById('editClientTime').value;
+            const schedule = readScheduleEditor();
             const hint = document.getElementById('clientSaveHint');
 
             if (!name) {
@@ -2460,8 +2670,9 @@
 
             client.name = name;
             client.modalities = modalities;
-            client.day = day;
-            client.time = time;
+            client.schedule = sortSchedule(schedule);
+            client.day = client.schedule[0]?.day || '';      // compatibilidade
+            client.time = client.schedule[0]?.time || '';
             client.updatedAt = new Date().toISOString();
 
             saveData();
@@ -3302,19 +3513,28 @@
             renderAthleteLoadTable(perAthlete);
 
             // --- Próximos atendimentos ---
-            const upcoming = (data.clients || [])
-                .filter(c => c.day && c.time)
-                .map(c => ({ ...c, dayNum: Object.keys(DAYS).indexOf(c.day) }))
-                .sort((a, b) => a.dayNum - b.dayNum || String(a.time).localeCompare(String(b.time)))
+            // Próximos atendimentos a partir de agora, girando a semana
+            const agoraIdx = (new Date().getDay() + 6) % 7;
+            const horaAgora = new Date().toTimeString().slice(0, 5);
+            const todos = [];
+            DAY_ORDER.forEach((day, i) => {
+                appointmentsOfDay(day).forEach(a => {
+                    let ordem = (i - agoraIdx + 7) % 7;
+                    if (ordem === 0 && a.time < horaAgora) ordem = 7;   // já passou hoje
+                    todos.push({ ...a, day, ordem });
+                });
+            });
+            const upcoming = todos
+                .sort((a, b) => a.ordem - b.ordem || String(a.time).localeCompare(String(b.time)))
                 .slice(0, 6);
 
             document.getElementById('nextAppointments').innerHTML = upcoming.length === 0
-                ? '<div style="color: var(--text-muted);">Nenhum agendamento — defina dia e hora em Clientes.</div>'
-                : upcoming.map(c => `
-                    <div class="list-item">
+                ? '<div style="color: var(--text-muted);">Nenhum atendimento fixo — monte a agenda no Planner.</div>'
+                : upcoming.map(a => `
+                    <div class="list-item" style="cursor:pointer;" onclick="openClientDetails('${a.client.id}')">
                         <div class="list-item-content">
-                            <div class="list-item-title">${c.name}</div>
-                            <div class="list-item-subtitle">${(c.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${DAYS[c.day]} às ${c.time}</div>
+                            <div class="list-item-title">${a.client.name}</div>
+                            <div class="list-item-subtitle">${(a.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}</div>
                         </div>
                     </div>
                 `).join('');
@@ -3476,29 +3696,98 @@
 
         function renderPlanner() {
             const container = document.getElementById('plannerContent');
-            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            if (!container) return;
 
-            const html = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 20px;">
-                    ${days.map(day => {
-                        const dayEvents = data.clients.filter(c => c.day === day);
-                        return `
-                            <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-                                <div style="font-weight: 600; color: var(--primary); margin-bottom: 12px;">${DAYS[day]}</div>
-                                ${dayEvents.map(c => `
-                                    <div style="background: rgba(212, 175, 55, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9rem;">
-                                        <div style="color: var(--text-primary);">${c.name}</div>
-                                        <div style="color: var(--text-muted); font-size: 0.85rem;">${c.time || 'Sem hora'}</div>
-                                    </div>
-                                `).join('')}
-                                ${dayEvents.length === 0 ? '<div style="color: var(--text-muted); font-size: 0.9rem;">Sem atendimentos</div>' : ''}
-                            </div>
-                        `;
-                    }).join('')}
+            const hoje = DAY_ORDER[(new Date().getDay() + 6) % 7];
+            const total = DAY_ORDER.reduce((n, d) => n + appointmentsOfDay(d).length, 0);
+
+            container.innerHTML = `
+                <div class="planner-bar">
+                    <div class="planner-count">${total} atendimento(s) fixo(s) na semana</div>
+                    <button class="chart-toggle" onclick="openPlannerAdd('')">➕ Novo atendimento</button>
                 </div>
-            `;
+                <div class="planner-grid">
+                    ${DAY_ORDER.map(day => {
+                        const evs = appointmentsOfDay(day);
+                        return `
+                            <div class="planner-day ${day === hoje ? 'today' : ''}">
+                                <div class="planner-day-head">
+                                    <span class="planner-day-name">${DAYS[day]}${day === hoje ? ' · hoje' : ''}</span>
+                                    <button class="planner-add" title="Adicionar neste dia"
+                                            onclick="openPlannerAdd('${day}')">＋</button>
+                                </div>
+                                ${evs.length === 0
+                                    ? '<div class="planner-empty">Livre</div>'
+                                    : evs.map(e => `
+                                        <div class="planner-slot">
+                                            <div class="planner-slot-top">
+                                                <span class="planner-slot-time">${e.time}</span>
+                                                <span class="planner-slot-mods">${(e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')}</span>
+                                                <span class="planner-slot-actions">
+                                                    <button title="Editar cliente" onclick="openClientDetails('${e.client.id}')">✎</button>
+                                                    <button title="Remover deste horário" onclick="removeAppointment('${e.client.id}', '${day}', '${e.time}')">✕</button>
+                                                </span>
+                                            </div>
+                                            <div class="planner-slot-name" title="${e.client.name}">${e.client.name}</div>
+                                        </div>
+                                    `).join('')}
+                            </div>`;
+                    }).join('')}
+                </div>`;
+        }
 
-            container.innerHTML = html;
+        function removeAppointment(clientId, day, time) {
+            const c = data.clients.find(x => x.id === clientId);
+            if (!c) return;
+            if (!confirm(`Remover ${c.name} de ${DAYS[day]} às ${time}?`)) return;
+            c.schedule = (c.schedule || []).filter(x => !(x.day === day && x.time === time));
+            c.day = c.schedule[0]?.day || '';
+            c.time = c.schedule[0]?.time || '';
+            saveData();
+            renderPlanner();
+            renderDashboard();
+            renderClientsTab();
+        }
+
+        function openPlannerAdd(day) {
+            if (!data.clients.length) { alert('Cadastre um cliente antes de montar a agenda.'); return; }
+            document.getElementById('plannerAddDay').value = day || '';
+            document.getElementById('plannerAddTime').value = '';
+            const sel = document.getElementById('plannerAddClient');
+            sel.innerHTML = '<option value="">Selecione o cliente…</option>' +
+                data.clients.slice().sort((a, b) => a.name.localeCompare(b.name))
+                    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('plannerAddModal').classList.add('active');
+        }
+
+        function savePlannerAdd() {
+            const clientId = document.getElementById('plannerAddClient').value;
+            const day = document.getElementById('plannerAddDay').value;
+            const time = document.getElementById('plannerAddTime').value;
+            const hint = document.getElementById('plannerAddHint');
+
+            if (!clientId || !day || !time) {
+                hint.textContent = 'Preencha cliente, dia e horário.';
+                hint.className = 'save-hint error';
+                return;
+            }
+            const c = data.clients.find(x => x.id === clientId);
+            if (!c) return;
+            c.schedule = c.schedule || [];
+            if (c.schedule.some(x => x.day === day && x.time === time)) {
+                hint.textContent = 'Esse cliente já tem esse horário.';
+                hint.className = 'save-hint error';
+                return;
+            }
+            c.schedule.push({ day, time });
+            c.schedule = sortSchedule(c.schedule);
+            c.day = c.schedule[0].day;
+            c.time = c.schedule[0].time;
+            saveData();
+            closeModal('plannerAddModal');
+            renderPlanner();
+            renderDashboard();
+            renderClientsTab();
         }
 
         // ============================================
