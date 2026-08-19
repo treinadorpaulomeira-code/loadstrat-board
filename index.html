@@ -634,6 +634,16 @@
         .status-pill.critical { background: rgba(224, 90, 82, 0.16);  color: #ef8079; border: 1px solid rgba(224,90,82,0.38); }
         .status-pill.neutral  { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); }
 
+        .client-sessions-summary {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; flex-wrap: wrap;
+            margin-top: 22px; padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            font-size: 0.83rem; color: var(--text-secondary);
+        }
+
         /* ============ PLANNER ============ */
         .planner-bar {
             display: flex; align-items: center; justify-content: space-between;
@@ -712,6 +722,12 @@
             background: #2f2f2f; border: 1px solid var(--border);
             border-radius: 6px; color: var(--text-primary);
             font-size: 0.88rem; font-family: inherit; color-scheme: dark;
+        }
+        .schedule-row select {
+            appearance: none; -webkit-appearance: none; cursor: pointer;
+            padding-right: 34px;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d4af37' d='M1.4 0 6 4.6 10.6 0 12 1.4 6 7.4 0 1.4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
         }
         .schedule-row select:focus, .schedule-row input:focus {
             outline: none; border-color: var(--primary);
@@ -864,6 +880,11 @@
             height: 10px;
             border-radius: 3px;
             flex-shrink: 0;
+        }
+
+        .chart-legend-swatch.hatched {
+            background-image: repeating-linear-gradient(45deg,
+                rgba(0,0,0,0.5) 0 2px, transparent 2px 4px);
         }
 
         .chart-table {
@@ -1709,11 +1730,9 @@
             <div class="form-group">
                 <label>Modalidades</label>
                 <div class="modality-picker">
-                    <label class="modality-chip"><input type="checkbox" value="Corrida" class="modality-checkbox"><span class="chip-dot" style="background:#5195ce"></span>🏃 Corrida</label>
-                    <label class="modality-chip"><input type="checkbox" value="Musculação" class="modality-checkbox"><span class="chip-dot" style="background:#7e599c"></span>💪 Musculação</label>
-                    <label class="modality-chip"><input type="checkbox" value="Pliometria" class="modality-checkbox"><span class="chip-dot" style="background:#af2b23"></span>💣 Pliometria</label>
-                    <label class="modality-chip"><input type="checkbox" value="Potência" class="modality-checkbox"><span class="chip-dot" style="background:#c27f22"></span>⚡ Potência</label>
-                    <label class="modality-chip"><input type="checkbox" value="Resistência" class="modality-checkbox"><span class="chip-dot" style="background:#46a47a"></span>🫁 Resistência</label>
+                    <label class="modality-chip"><input type="checkbox" value="Corrida" class="modality-checkbox"><span class="chip-dot" style="background:#5490cc"></span>🏃 Corrida</label>
+                    <label class="modality-chip"><input type="checkbox" value="Esporte" class="modality-checkbox"><span class="chip-dot" style="background:#3f9e74"></span>⚽ Esporte</label>
+                    <label class="modality-chip"><input type="checkbox" value="Treino de Força" class="modality-checkbox"><span class="chip-dot" style="background:#b0632a"></span>🏋️ Treino de Força</label>
                 </div>
             </div>
 
@@ -1817,19 +1836,14 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Modalidade</label>
-                    <select id="sessionModality">
+                    <select id="sessionModality" onchange="updateEmphasisOptions()">
                         <option value="">Selecione...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Tipo</label>
-                    <select id="sessionType">
-                        <option value="Força">💪 Força</option>
-                        <option value="Potência">⚡ Potência</option>
-                        <option value="Pliometria">💣 Pliometria</option>
-                        <option value="Resistência">🫁 Resistência</option>
-                        <option value="Velocidade">🚀 Velocidade</option>
-                        <option value="Mobilidade">🧘 Mobilidade</option>
+                    <label>Ênfase do treino</label>
+                    <select id="sessionEmphasis">
+                        <option value="">Escolha a modalidade primeiro</option>
                     </select>
                 </div>
             </div>
@@ -1913,18 +1927,50 @@
         let selectedSessionEdit = null;
         let charts = {};
 
-        // Paleta categórica validada para superfície escura #1a1a1a
-        // (banda de luminosidade, chroma, separação para daltonismo e visão normal)
+        // Três categorias de treino. Paleta validada para a superfície escura #1a1a1a
+        // (banda de luminosidade, chroma, separação para daltonismo e para visão normal).
         const MODALITIES = {
-            'Corrida':      { icon: '🏃', color: '#5195ce' },
-            'Musculação':   { icon: '💪', color: '#7e599c' },
-            'Pliometria':   { icon: '💣', color: '#af2b23' },
-            'Potência':     { icon: '⚡', color: '#c27f22' },
-            'Resistência':  { icon: '🫁', color: '#46a47a' }
+            'Corrida':         { icon: '🏃', color: '#5490cc' },
+            'Esporte':         { icon: '⚽', color: '#3f9e74' },
+            'Treino de Força': { icon: '🏋️', color: '#b0632a' }
         };
+
+        // Ênfase do treino — escolhida só na Periodização, ao registrar a sessão
+        const EMPHASES = {
+            'Corrida': ['Base aeróbica', 'Ritmo / Limiar', 'Intervalado', 'Tiros curtos', 'Longão', 'Regenerativo'],
+            'Esporte': ['Futebol', 'Beach tennis', 'Tênis', 'Vôlei', 'Basquete', 'Natação', 'Ciclismo', 'Outro'],
+            'Treino de Força': ['Musculação', 'Pliometria', 'Potência', 'Força máxima', 'Hipertrofia', 'Resistência muscular', 'Core / Estabilidade']
+        };
+
+        // Sessões vindas do Controle de Carga não têm categoria: o aluno só descreve o treino.
+        const CARGA_INTERNA = { label: 'Carga interna', color: '#7a7a7a' };
 
         const CHART_SURFACE = '#1a1a1a';
         const CHART_INK = { primary: '#f2f2f2', secondary: '#b9b9b9', muted: '#8a8a8a', grid: 'rgba(255,255,255,0.07)' };
+
+        // Padrão hachurado — codifica "sem categoria" pela forma, não só pela cor
+        let _hatchCache = null;
+        function hatchPattern(color) {
+            if (_hatchCache) return _hatchCache;
+            const c = document.createElement('canvas');
+            c.width = c.height = 8;
+            const x = c.getContext('2d');
+            x.fillStyle = color; x.fillRect(0, 0, 8, 8);
+            x.strokeStyle = 'rgba(0,0,0,0.45)'; x.lineWidth = 2;
+            x.beginPath(); x.moveTo(0, 8); x.lineTo(8, 0); x.stroke();
+            x.beginPath(); x.moveTo(-2, 2); x.lineTo(2, -2); x.stroke();
+            x.beginPath(); x.moveTo(6, 10); x.lineTo(10, 6); x.stroke();
+            const ctx2 = document.createElement('canvas').getContext('2d');
+            _hatchCache = ctx2.createPattern(c, 'repeat');
+            return _hatchCache;
+        }
+
+        // Reclassifica dados antigos para as três categorias
+        const LEGACY_MODALITY_MAP = {
+            'Musculação': 'Treino de Força', 'Pliometria': 'Treino de Força',
+            'Potência': 'Treino de Força', 'Resistência': 'Treino de Força',
+            'Corrida': 'Corrida'
+        };
 
         const DAYS = {
             'segunda': 'Segunda',
@@ -2162,7 +2208,8 @@
             if (stored) {
                 data = JSON.parse(stored);
             }
-            if (migrateSchedules()) saveData();
+            const m1 = migrateSchedules(), m2 = migrateModalities();
+            if (m1 || m2) saveData();
         }
 
         // ============================================
@@ -2220,7 +2267,7 @@
                         c = {
                             id: 'c_cc_' + a.usuario,
                             name: a.nome,
-                            modalities: ['Musculação'],
+                            modalities: ['Treino de Força'],
                             day: '',
                             time: '',
                             schedule: [],
@@ -2252,7 +2299,7 @@
 
                     const payload = {
                         clientId: client.id,
-                        modality: client.modalities[0] || 'Musculação',
+                        modality: null,   // o aluno descreve o treino; a categoria não vem do Controle de Carga
                         date,
                         volume: tempo,
                         unit: 'min',
@@ -2515,7 +2562,42 @@
         // ============================================
         // AGENDA — um cliente pode ter vários dias/horários
         // ============================================
+        function modalityIcon(m) { return MODALITIES[m]?.icon || '📋'; }
+        function modalityColor(m) { return MODALITIES[m]?.color || CARGA_INTERNA.color; }
+        function modalityLabel(m) { return m || CARGA_INTERNA.label; }
+
+        // Como a sessão aparece nas listas: categoria + ênfase quando houver
+        function sessionLabel(sx) {
+            if (!sx.modality) return `📋 ${CARGA_INTERNA.label}${sx.emphasis ? ' · ' + sx.emphasis : ''}`;
+            return `${modalityIcon(sx.modality)} ${sx.modality}${sx.emphasis ? ' · ' + sx.emphasis : ''}`;
+        }
+
         const DAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+        // Reclassifica clientes e sessões antigos para as três categorias
+        function migrateModalities() {
+            let changed = false;
+            (data.clients || []).forEach(c => {
+                const novas = [...new Set((c.modalities || [])
+                    .map(m => MODALITIES[m] ? m : (LEGACY_MODALITY_MAP[m] || null))
+                    .filter(Boolean))];
+                if (JSON.stringify(novas) !== JSON.stringify(c.modalities || [])) {
+                    c.modalities = novas.length ? novas : ['Treino de Força'];
+                    changed = true;
+                }
+            });
+            (data.sessions || []).forEach(sx => {
+                if (sx.origem === 'controle-carga') {
+                    if (sx.modality) { sx.emphasis = sx.emphasis || null; sx.modality = null; changed = true; }
+                    return;
+                }
+                if (sx.modality && !MODALITIES[sx.modality]) {
+                    const nova = LEGACY_MODALITY_MAP[sx.modality];
+                    if (nova) { sx.emphasis = sx.emphasis || sx.modality; sx.modality = nova; changed = true; }
+                }
+            });
+            return changed;
+        }
 
         // Converte o formato antigo (day/time únicos) para a lista schedule[]
         function migrateSchedules() {
@@ -2571,7 +2653,7 @@
                 <div class="form-group">
                     <label>Modalidades</label>
                     <div class="modality-picker">
-                        ${['Corrida', 'Musculação', 'Pliometria', 'Potência', 'Resistência'].map(m => `
+                        ${Object.keys(MODALITIES).map(m => `
                             <label class="modality-chip">
                                 <input type="checkbox" value="${m}" class="edit-modality-checkbox" ${client.modalities.includes(m) ? 'checked' : ''} onchange="markClientDirty()">
                                 <span class="chip-dot" style="background:${MODALITIES[m]?.color}"></span>${MODALITIES[m]?.icon} ${m}
@@ -2586,12 +2668,11 @@
                             onclick="addScheduleRow()">➕ Adicionar horário</button>
                 </div>
 
-                <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--text-primary);">Sessões Registradas</h3>
-                <div id="clientSessions"></div>
+                <div id="clientSessionsSummary" class="client-sessions-summary"></div>
             `;
 
             renderScheduleEditor(client.schedule || []);
-            renderClientSessions(clientId);
+            renderClientSessionsSummary(clientId);
             clientDirty = false;
             const hint = document.getElementById('clientSaveHint');
             if (hint) { hint.textContent = ''; hint.className = 'save-hint'; }
@@ -2697,6 +2778,35 @@
             closeModal('clientDetailsModal');
         }
 
+        // Resumo curto — a lista completa fica na Periodização
+        function renderClientSessionsSummary(clientId) {
+            const el = document.getElementById('clientSessionsSummary');
+            if (!el) return;
+            const ss = (data.sessions || []).filter(x => x.clientId === clientId);
+            if (!ss.length) {
+                el.innerHTML = '<span>Nenhuma sessão registrada ainda.</span>';
+                return;
+            }
+            const ultima = ss.map(x => x.date).sort().slice(-1)[0];
+            const carga = ss.reduce((a, b) => a + sessionLoad(b), 0);
+            el.innerHTML = `
+                <span>${ss.length} sessão(ões) · última em ${new Date(ultima + 'T00:00:00').toLocaleDateString('pt-BR')} · carga total ${Math.round(carga).toLocaleString('pt-BR')} u.a.</span>
+                <button type="button" class="chart-toggle" onclick="verSessoesDoCliente('${clientId}')">Ver na Periodização</button>`;
+        }
+
+        function verSessoesDoCliente(clientId) {
+            closeModal('clientDetailsModal');
+            selectedClientId = clientId;
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('periodization').classList.add('active');
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+            const it = Array.from(document.querySelectorAll('.sidebar-item')).find(i => /Periodiza/.test(i.textContent));
+            if (it) it.classList.add('active');
+            const t = document.getElementById('headerTitle');
+            if (t) t.textContent = '📈 Periodização';
+            selectClientForPeriod(clientId);
+        }
+
         function renderClientSessions(clientId) {
             const container = document.getElementById('clientSessions');
             const sessions = data.sessions.filter(s => s.clientId === clientId).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -2722,7 +2832,7 @@
                         ${sessions.map(s => `
                             <tr>
                                 <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
-                                <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                <td>${sessionLabel(s)}</td>
                                 <td>${s.volume} ${s.unit || ''}</td>
                                 <td>${s.rpe}/10</td>
                                 <td><span class="risk-badge ${s.risk}">${s.risk === 'low' ? 'Baixo' : s.risk === 'medium' ? 'Médio' : 'Alto'}</span></td>
@@ -2815,16 +2925,28 @@
                         <div class="modalities-grid">
                             ${client.modalities.map(mod => {
                                 const volSessions = clientSessions.filter(s => s.modality === mod);
-                                const totalVol = volSessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1);
+                                const totalVol = volSessions.reduce((sum, s) => sum + (Number(s.volume) || 0), 0).toFixed(1);
                                 const unit = volSessions.length > 0 ? (volSessions[0].unit || '') : '';
                                 return `
-                                    <div class="modality-card" style="border-color: ${MODALITIES[mod].color};">
-                                        <div class="modality-icon">${MODALITIES[mod].icon}</div>
+                                    <div class="modality-card" style="border-color: ${MODALITIES[mod]?.color || CARGA_INTERNA.color};">
+                                        <div class="modality-icon">${MODALITIES[mod]?.icon || '📋'}</div>
                                         <div class="modality-name">${mod}</div>
                                         <div class="modality-volume">${totalVol} ${unit}</div>
                                     </div>
                                 `;
                             }).join('')}
+                            ${(() => {
+                                const semCat = clientSessions.filter(s => !s.modality);
+                                if (!semCat.length) return '';
+                                const vol = semCat.reduce((sum, s) => sum + (Number(s.volume) || 0), 0).toFixed(1);
+                                const unit = semCat[0].unit || '';
+                                return `
+                                    <div class="modality-card" style="border-color: ${CARGA_INTERNA.color};" title="Sessões registradas pelo aluno no Controle de Carga — sem categoria">
+                                        <div class="modality-icon">📋</div>
+                                        <div class="modality-name">${CARGA_INTERNA.label}</div>
+                                        <div class="modality-volume">${vol} ${unit}</div>
+                                    </div>`;
+                            })()}
                         </div>
                     </div>
 
@@ -2929,13 +3051,26 @@
             if (!canvas) return;
 
             const weeks = [...new Set(sessions.map(s => parseInt(getWeekNumber(new Date(s.date)))))].sort((a, b) => a - b);
-            const series = client.modalities.map(mod => ({
-                label: mod,
-                color: MODALITIES[mod]?.color || CHART_INK.muted,
-                values: weeks.map(w => sessions
-                    .filter(s => s.modality === mod && parseInt(getWeekNumber(new Date(s.date))) === w)
-                    .reduce((sum, s) => sum + s.volume, 0))
-            }));
+            const wk = s => parseInt(getWeekNumber(new Date(s.date)));
+
+            // Uma série por categoria que o cliente pratica...
+            const series = client.modalities
+                .map(mod => ({
+                    label: mod,
+                    color: MODALITIES[mod]?.color || CHART_INK.muted,
+                    values: weeks.map(w => sessions
+                        .filter(x => x.modality === mod && wk(x) === w)
+                        .reduce((sum, x) => sum + (Number(x.volume) || 0), 0))
+                }))
+                .filter(d => d.values.some(v => v > 0));
+
+            // ...mais o que veio do Controle de Carga, que não tem categoria.
+            const semCat = weeks.map(w => sessions
+                .filter(x => !x.modality && wk(x) === w)
+                .reduce((sum, x) => sum + (Number(x.volume) || 0), 0));
+            if (semCat.some(v => v > 0)) {
+                series.push({ label: CARGA_INTERNA.label, color: CARGA_INTERNA.color, values: semCat, hatch: true });
+            }
 
             periodizationCache = { weeks, series };
             renderPeriodizationLegend(series);
@@ -2947,7 +3082,7 @@
             const datasets = series.map(d => ({
                 label: d.label,
                 data: d.values,
-                backgroundColor: d.color,
+                backgroundColor: d.hatch ? (hatchPattern(d.color) || d.color) : d.color,
                 // Espaçador de 2px na cor da superfície separa cada segmento empilhado
                 borderColor: CHART_SURFACE,
                 borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
@@ -3061,7 +3196,7 @@
             if (!el) return;
             el.innerHTML = series.map(d => `
                 <span class="chart-legend-item">
-                    <span class="chart-legend-swatch" style="background:${d.color}"></span>${d.label}
+                    <span class="chart-legend-swatch${d.hatch ? ' hatched' : ''}" style="background:${d.color}"></span>${d.label}
                 </span>
             `).join('');
         }
@@ -3197,6 +3332,7 @@
             document.getElementById('sessionMeso').value = data.mesocycle;
             document.getElementById('sessionNotes').value = '';
 
+            updateEmphasisOptions();
             document.getElementById('addSessionModal').classList.add('active');
         }
 
@@ -3205,7 +3341,7 @@
 
             const date = document.getElementById('sessionDate').value;
             const modality = document.getElementById('sessionModality').value;
-            const type = document.getElementById('sessionType').value;
+            const emphasis = document.getElementById('sessionEmphasis').value;
             const intensity = parseInt(document.getElementById('sessionIntensity').value);
             const volume = parseFloat(document.getElementById('sessionVolume').value);
             const unit = document.getElementById('sessionUnit').value;
@@ -3227,7 +3363,8 @@
                 date,
                 week,
                 modality,
-                type,
+                emphasis,
+                type: emphasis || modality,
                 intensity,
                 volume,
                 unit,
@@ -3241,7 +3378,7 @@
             saveData();
             closeModal('addSessionModal');
             renderPeriodization();
-            renderClientSessions(selectedClientId);
+            renderDashboard();
         }
 
         // ============================================
@@ -3267,6 +3404,16 @@
             document.getElementById('finWeek').textContent = 'R$ ' + weekTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
             document.getElementById('finMonth').textContent = 'R$ ' + monthTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
             document.getElementById('finTotal').textContent = 'R$ ' + total.toFixed(2);
+        }
+
+        function updateEmphasisOptions() {
+            const mod = document.getElementById('sessionModality').value;
+            const sel = document.getElementById('sessionEmphasis');
+            if (!sel) return;
+            const list = EMPHASES[mod] || [];
+            sel.innerHTML = mod
+                ? '<option value="">Sem ênfase específica</option>' + list.map(e => `<option value="${e}">${e}</option>`).join('')
+                : '<option value="">Escolha a modalidade primeiro</option>';
         }
 
         function updateFinanceiroSelects() {
@@ -3877,7 +4024,7 @@
                             ${filteredSessions.map(s => `
                                 <tr>
                                     <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
-                                    <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                    <td>${sessionLabel(s)}</td>
                                     <td>${s.volume} ${s.unit || ''}</td>
                                     <td>${s.rpe}/10</td>
                                     <td>${(s.volume * s.rpe / 10).toFixed(1)}</td>
@@ -4045,7 +4192,7 @@
                                 ${sessions.map(s => `
                                     <tr>
                                         <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
-                                        <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                        <td>${sessionLabel(s)}</td>
                                         <td>${s.type}</td>
                                         <td>${s.volume} ${s.unit || ''}</td>
                                         <td>${s.rpe}/10</td>
