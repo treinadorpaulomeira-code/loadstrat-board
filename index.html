@@ -1116,38 +1116,26 @@
                     </div>
 
                     <div class="card">
-                        <div class="card-title">☁️ Banco de Dados na Nuvem</div>
+                        <div class="card-title">☁️ Sincronização na Nuvem</div>
                         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
-                            Conecte um banco Firebase para acessar seus dados do notebook e do iPhone,
-                            sempre sincronizados. Sem isso, os dados ficam salvos apenas neste navegador.
+                            Entre com sua conta Google para acessar seus clientes e treinos do notebook
+                            e do iPhone, sempre sincronizados. Seus dados ficam privados — só a sua conta acessa.
                         </p>
 
                         <div class="form-group">
-                            <label>Status da nuvem</label>
-                            <input type="text" id="cloudStatus" value="Não conectado" readonly>
+                            <label>Conta conectada</label>
+                            <input type="text" id="cloudUser" value="Não conectado" readonly>
                         </div>
 
                         <div class="form-group">
-                            <label>Configuração do Firebase (cole o objeto firebaseConfig aqui)</label>
-                            <textarea id="cloudConfigInput" rows="8" placeholder='{
-  "apiKey": "...",
-  "authDomain": "seu-projeto.firebaseapp.com",
-  "projectId": "seu-projeto",
-  "storageBucket": "seu-projeto.appspot.com",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
+                            <label>Status</label>
+                            <input type="text" id="cloudStatus" value="Carregando..." readonly>
                         </div>
 
-                        <div class="form-group">
-                            <label>Código do seu espaço (mesmo código em todos os aparelhos)</label>
-                            <input type="text" id="cloudWorkspaceInput" placeholder="Ex: paulo-meira-2026">
-                        </div>
-
-                        <button style="width: 100%; margin-top: 8px;" onclick="connectCloud()">☁️ Conectar à Nuvem</button>
+                        <button style="width: 100%; margin-top: 8px;" onclick="cloudLogin()">🔐 Entrar com Google</button>
                         <button style="width: 100%; margin-top: 10px;" onclick="cloudPushNow()">⬆️ Enviar dados agora</button>
                         <button style="width: 100%; margin-top: 10px;" onclick="cloudPullNow()">⬇️ Baixar dados da nuvem</button>
-                        <button style="width: 100%; margin-top: 10px; background: var(--bg-tertiary);" onclick="disconnectCloud()">🔌 Desconectar</button>
+                        <button style="width: 100%; margin-top: 10px; background: var(--bg-tertiary);" onclick="cloudLogout()">🚪 Sair da conta</button>
                     </div>
                 </div>
             </div>
@@ -1384,40 +1372,85 @@
             cloudPush();
         }
 
-        /* ============ NUVEM (FIREBASE FIRESTORE) ============ */
-        const CLOUD_KEYS = { config: 'pmaCloudConfig', workspace: 'pmaCloudWorkspace' };
-        let cloudDb = null, cloudDocRef = null, cloudReady = false;
-        let cloudApplyingRemote = false, cloudPushTimer = null;
+        /* ============ NUVEM (FIREBASE + LOGIN GOOGLE) ============ */
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBuHzuH_oHzzLT0rqiWcl1U3Lo8B3egYHo",
+            authDomain: "loadstrat-board.firebaseapp.com",
+            projectId: "loadstrat-board",
+            storageBucket: "loadstrat-board.firebasestorage.app",
+            messagingSenderId: "20970506487",
+            appId: "1:20970506487:web:9af3542b78e53f199eebf2"
+        };
+
+        let cloudDb = null, cloudAuth = null, cloudDocRef = null;
+        let cloudReady = false, cloudUser = null;
+        let cloudApplyingRemote = false, cloudPushTimer = null, cloudUnsub = null;
 
         function setCloudStatus(msg) {
             const el = document.getElementById('cloudStatus');
             if (el) el.value = msg;
         }
 
+        function setCloudUserLabel(txt) {
+            const el = document.getElementById('cloudUser');
+            if (el) el.value = txt;
+        }
+
         function loadFirebaseScripts() {
-            if (window.firebase && window.firebase.firestore) return Promise.resolve();
+            if (window.firebase && window.firebase.firestore && window.firebase.auth) return Promise.resolve();
             const urls = [
                 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
                 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js'
             ];
             return urls.reduce((chain, url) => chain.then(() => new Promise((resolve, reject) => {
                 const s = document.createElement('script');
                 s.src = url;
                 s.onload = resolve;
-                s.onerror = () => reject(new Error('Falha ao carregar ' + url));
+                s.onerror = () => reject(new Error('Falha ao carregar o Firebase'));
                 document.head.appendChild(s);
             })), Promise.resolve());
         }
 
-        async function initCloud(config, workspace, opts = {}) {
-            await loadFirebaseScripts();
-            if (!firebase.apps.length) firebase.initializeApp(config);
+        async function cloudBoot() {
+            try {
+                await loadFirebaseScripts();
+            } catch (e) {
+                setCloudStatus('⚠️ Sem internet — usando apenas este aparelho');
+                return;
+            }
+            if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+            cloudAuth = firebase.auth();
             cloudDb = firebase.firestore();
-            cloudDocRef = cloudDb.collection('loadstrat').doc(workspace);
-            cloudReady = true;
 
-            cloudDocRef.onSnapshot(snap => {
-                if (!snap.exists) return;
+            cloudAuth.onAuthStateChanged(user => {
+                cloudUser = user;
+                if (user) {
+                    setCloudUserLabel(user.email || user.displayName || 'conectado');
+                    attachCloudDoc(user.uid);
+                } else {
+                    setCloudUserLabel('Não conectado');
+                    setCloudStatus('Faça login para sincronizar entre aparelhos');
+                    cloudReady = false;
+                    cloudDocRef = null;
+                    if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+                }
+            });
+
+            try {
+                const res = await cloudAuth.getRedirectResult();
+                if (res && res.user) setCloudStatus('☁️ Login concluído');
+            } catch (e) { /* sem redirect pendente */ }
+        }
+
+        function attachCloudDoc(uid) {
+            cloudDocRef = cloudDb.collection('loadstrat').doc(uid);
+            cloudReady = true;
+            setCloudStatus('☁️ Conectado — sincronizando');
+
+            if (cloudUnsub) cloudUnsub();
+            cloudUnsub = cloudDocRef.onSnapshot(snap => {
+                if (!snap.exists) { cloudPushNow(); return; }
                 const remote = snap.data();
                 if (!remote || !remote.payload) return;
                 let parsed;
@@ -1430,12 +1463,8 @@
                 localStorage.setItem('pmaData', JSON.stringify(data));
                 cloudApplyingRemote = false;
                 setCloudStatus('☁️ Atualizado da nuvem — ' + new Date(remoteAt).toLocaleTimeString('pt-BR'));
-                if (typeof renderAll === 'function') { try { renderAll(); } catch (e) {} }
-                else { location.reload(); }
-            }, err => setCloudStatus('⚠️ Erro na nuvem: ' + err.message));
-
-            setCloudStatus('☁️ Conectado — espaço "' + workspace + '"');
-            if (opts.pushAfterConnect) cloudPushNow();
+                location.reload();
+            }, err => setCloudStatus('⚠️ ' + err.message));
         }
 
         function cloudPush() {
@@ -1452,79 +1481,48 @@
         }
 
         function cloudPushNow() {
-            if (!cloudReady) { setCloudStatus('Conecte a nuvem primeiro'); return; }
+            if (!cloudReady) { setCloudStatus('Faça login primeiro'); return; }
             data.updatedAt = Date.now();
             cloudApplyingRemote = false;
             cloudPush();
         }
 
         async function cloudPullNow() {
-            if (!cloudReady || !cloudDocRef) { setCloudStatus('Conecte a nuvem primeiro'); return; }
+            if (!cloudReady || !cloudDocRef) { setCloudStatus('Faça login primeiro'); return; }
             try {
                 const snap = await cloudDocRef.get();
                 if (!snap.exists) { setCloudStatus('Nada salvo na nuvem ainda'); return; }
-                const remote = snap.data();
-                data = JSON.parse(remote.payload);
+                data = JSON.parse(snap.data().payload);
                 localStorage.setItem('pmaData', JSON.stringify(data));
-                setCloudStatus('☁️ Dados baixados da nuvem');
+                setCloudStatus('☁️ Dados baixados');
                 location.reload();
             } catch (err) {
-                setCloudStatus('⚠️ Erro ao baixar: ' + err.message);
-            }
-        }
-
-        async function connectCloud() {
-            const raw = (document.getElementById('cloudConfigInput').value || '').trim();
-            const workspace = (document.getElementById('cloudWorkspaceInput').value || '').trim();
-            if (!raw || !workspace) { setCloudStatus('Preencha a configuração e o código do espaço'); return; }
-
-            let config;
-            try {
-                const cleaned = raw
-                    .replace(/^\s*(const|var|let)\s+\w+\s*=\s*/, '')
-                    .replace(/;\s*$/, '')
-                    .replace(/(['"])?([A-Za-z0-9_]+)\1?\s*:/g, '"$2":')
-                    .replace(/'/g, '"')
-                    .replace(/,(\s*[}\]])/g, '$1');
-                config = JSON.parse(cleaned);
-            } catch (e) {
-                setCloudStatus('⚠️ Configuração inválida — cole o objeto completo do Firebase');
-                return;
-            }
-
-            try {
-                setCloudStatus('Conectando...');
-                localStorage.setItem(CLOUD_KEYS.config, JSON.stringify(config));
-                localStorage.setItem(CLOUD_KEYS.workspace, workspace);
-                await initCloud(config, workspace, { pushAfterConnect: true });
-            } catch (err) {
                 setCloudStatus('⚠️ ' + err.message);
             }
         }
 
-        function disconnectCloud() {
-            localStorage.removeItem(CLOUD_KEYS.config);
-            localStorage.removeItem(CLOUD_KEYS.workspace);
-            cloudReady = false; cloudDocRef = null;
-            setCloudStatus('Não conectado');
-        }
-
-        async function autoConnectCloud() {
-            const rawConfig = localStorage.getItem(CLOUD_KEYS.config);
-            const workspace = localStorage.getItem(CLOUD_KEYS.workspace);
-            if (!rawConfig || !workspace) { setCloudStatus('Não conectado'); return; }
-            const cfgEl = document.getElementById('cloudConfigInput');
-            const wsEl = document.getElementById('cloudWorkspaceInput');
-            if (cfgEl) cfgEl.value = JSON.stringify(JSON.parse(rawConfig), null, 2);
-            if (wsEl) wsEl.value = workspace;
+        async function cloudLogin() {
+            if (!cloudAuth) { setCloudStatus('Carregando...'); await cloudBoot(); }
+            if (!cloudAuth) { setCloudStatus('⚠️ Firebase indisponível'); return; }
+            const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                await initCloud(JSON.parse(rawConfig), workspace);
+                setCloudStatus('Abrindo login do Google...');
+                await cloudAuth.signInWithPopup(provider);
             } catch (err) {
-                setCloudStatus('⚠️ ' + err.message);
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+                    try { await cloudAuth.signInWithRedirect(provider); return; } catch (e2) {}
+                }
+                setCloudStatus('⚠️ ' + (err.message || 'Falha no login'));
             }
         }
 
-        window.addEventListener('load', () => setTimeout(autoConnectCloud, 600));
+        async function cloudLogout() {
+            if (!cloudAuth) return;
+            await cloudAuth.signOut();
+            setCloudStatus('Desconectado');
+        }
+
+        window.addEventListener('load', () => setTimeout(cloudBoot, 500));
 
         function loadData() {
             const stored = localStorage.getItem('pmaData');
