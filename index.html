@@ -29,11 +29,11 @@
             --warning: #ff9800;
             --danger: #f44336;
             --info: #2196f3;
-            --corrida: #2196f3;
-            --musculacao: #9c27b0;
-            --pliometria: #f44336;
-            --potencia: #ff9800;
-            --resistencia: #4caf50;
+            --corrida: #5195ce;
+            --musculacao: #7e599c;
+            --pliometria: #af2b23;
+            --potencia: #c27f22;
+            --resistencia: #46a47a;
         }
 
         html, body {
@@ -270,12 +270,13 @@
         .form-group textarea {
             width: 100%;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.08);
+            background: #2f2f2f;
             border: 1px solid var(--border);
             border-radius: 6px;
             color: var(--text-primary);
             font-size: 0.9rem;
             font-family: inherit;
+            color-scheme: dark;
         }
 
         .form-group input:focus,
@@ -283,7 +284,41 @@
         .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.12);
+            background: #383838;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+        }
+
+        /* Dropdown nativo legível no tema escuro */
+        .form-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 38px;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d4af37' d='M1.4 0 6 4.6 10.6 0 12 1.4 6 7.4 0 1.4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+        }
+
+        select option,
+        .form-group select option {
+            background-color: #2f2f2f;
+            color: #ffffff;
+        }
+
+        select option:disabled {
+            color: #8a8a8a;
+        }
+
+        select option:checked,
+        select option:hover {
+            background-color: var(--primary);
+            color: #1a1a1a;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(78%) sepia(41%) saturate(628%) hue-rotate(2deg) brightness(92%) contrast(88%);
+            cursor: pointer;
         }
 
         .form-row {
@@ -517,7 +552,173 @@
         .chart-container {
             position: relative;
             height: 350px;
-            margin-top: 20px;
+            margin-top: 12px;
+        }
+
+        /* ============ MODALITY CHIPS ============ */
+        .modality-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .modality-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            font-size: 0.86rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .modality-chip:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            color: var(--text-primary);
+        }
+
+        .modality-chip input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .chip-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex: 0 0 10px;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+        }
+
+        .modality-chip:has(input:checked) {
+            background: rgba(212, 175, 55, 0.14);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .modality-chip:has(input:focus-visible) {
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        }
+
+        /* ============ CHART (PREMIUM) ============ */
+        .chart-card {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 22px 24px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .chart-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .chart-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.2px;
+        }
+
+        .chart-subtitle {
+            margin-top: 3px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .chart-toggle {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: 0;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .chart-toggle:hover {
+            color: var(--primary);
+            border-color: rgba(212, 175, 55, 0.55);
+            background: rgba(212, 175, 55, 0.08);
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .chart-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .chart-table {
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+
+        .chart-table .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.86rem;
+        }
+
+        .chart-table .data-table th {
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            white-space: nowrap;
+        }
+
+        .chart-table .data-table th:first-child { text-align: left; }
+
+        .chart-table .data-table td {
+            padding: 9px 14px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        .chart-table .data-table td strong { color: var(--text-primary); }
+
+        .chart-table .data-table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
         }
 
         /* ============ MODALITIES ============ */
@@ -1110,7 +1311,10 @@
                     <div class="card grid-full">
                         <div class="flex-between">
                             <div class="card-title">👥 Gerenciar Clientes</div>
-                            <button onclick="openAddClientModal()">➕ Novo Cliente</button>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="importarAlunosControleCarga()" style="background: rgba(255,255,255,0.06); color: var(--primary); border: 1px solid var(--border);">⬇️ Importar do Controle de Carga</button>
+                                <button onclick="openAddClientModal()">➕ Novo Cliente</button>
+                            </div>
                         </div>
                         <div id="clientesList"></div>
                     </div>
@@ -1301,22 +1505,12 @@
 
             <div class="form-group">
                 <label>Modalidades</label>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" value="Corrida" class="modality-checkbox"> 🏃 Corrida
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" value="Musculação" class="modality-checkbox"> 💪 Musculação
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" value="Pliometria" class="modality-checkbox"> 💣 Pliometria
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" value="Potência" class="modality-checkbox"> ⚡ Potência
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" value="Resistência" class="modality-checkbox"> 🫁 Resistência
-                    </label>
+                <div class="modality-picker">
+                    <label class="modality-chip"><input type="checkbox" value="Corrida" class="modality-checkbox"><span class="chip-dot" style="background:#5195ce"></span>🏃 Corrida</label>
+                    <label class="modality-chip"><input type="checkbox" value="Musculação" class="modality-checkbox"><span class="chip-dot" style="background:#7e599c"></span>💪 Musculação</label>
+                    <label class="modality-chip"><input type="checkbox" value="Pliometria" class="modality-checkbox"><span class="chip-dot" style="background:#af2b23"></span>💣 Pliometria</label>
+                    <label class="modality-chip"><input type="checkbox" value="Potência" class="modality-checkbox"><span class="chip-dot" style="background:#c27f22"></span>⚡ Potência</label>
+                    <label class="modality-chip"><input type="checkbox" value="Resistência" class="modality-checkbox"><span class="chip-dot" style="background:#46a47a"></span>🫁 Resistência</label>
                 </div>
             </div>
 
@@ -1324,7 +1518,7 @@
                 <div class="form-group">
                     <label>Dia Padrão</label>
                     <select id="clientDay">
-                        <option value="">-</option>
+                        <option value="">Selecione o dia…</option>
                         <option value="segunda">Segunda</option>
                         <option value="terca">Terça</option>
                         <option value="quarta">Quarta</option>
@@ -1476,13 +1670,18 @@
         let selectedSessionEdit = null;
         let charts = {};
 
+        // Paleta categórica validada para superfície escura #1a1a1a
+        // (banda de luminosidade, chroma, separação para daltonismo e visão normal)
         const MODALITIES = {
-            'Corrida': { icon: '🏃', color: '#2196f3' },
-            'Musculação': { icon: '💪', color: '#9c27b0' },
-            'Pliometria': { icon: '💣', color: '#f44336' },
-            'Potência': { icon: '⚡', color: '#ff9800' },
-            'Resistência': { icon: '🫁', color: '#4caf50' }
+            'Corrida':      { icon: '🏃', color: '#5195ce' },
+            'Musculação':   { icon: '💪', color: '#7e599c' },
+            'Pliometria':   { icon: '💣', color: '#af2b23' },
+            'Potência':     { icon: '⚡', color: '#c27f22' },
+            'Resistência':  { icon: '🫁', color: '#46a47a' }
         };
+
+        const CHART_SURFACE = '#1a1a1a';
+        const CHART_INK = { primary: '#f2f2f2', secondary: '#b9b9b9', muted: '#8a8a8a', grid: 'rgba(255,255,255,0.07)' };
 
         const DAYS = {
             'segunda': 'Segunda',
@@ -1940,6 +2139,50 @@
             updateFinanceiroSelects();
         }
 
+        // ============================================
+        // IMPORTAR ALUNOS DO CONTROLE DE CARGA
+        // ============================================
+        const CONTROLE_CARGA_ALUNOS = [
+            'Ana Carolina Mesquita', 'Ana Graciano', 'Ana Paula Trotta', 'Antonio Trotta',
+            'Bruno Passadore', 'Gabriela Vizel', 'Guilherme J Silva', 'Ingrid Lima Meira',
+            'Jessica J. Coelho', 'Joao Victor Zambon', 'Marcela Fernandes', 'Melina Kania',
+            'Paulo Meira', 'Rodrigo Carlos da Silva', 'Tatiana Dalmasio'
+        ];
+
+        function normalizeName(n) {
+            return (n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+        }
+
+        function importarAlunosControleCarga() {
+            const existentes = new Set(data.clients.map(c => normalizeName(c.name)));
+            const novos = CONTROLE_CARGA_ALUNOS.filter(n => !existentes.has(normalizeName(n)));
+
+            if (novos.length === 0) {
+                alert('Todos os alunos do Controle de Carga já estão cadastrados.');
+                return;
+            }
+
+            if (!confirm(`Importar ${novos.length} aluno(s) do Controle de Carga?\n\n` + novos.join('\n'))) return;
+
+            let base = Date.now();
+            novos.forEach((name, i) => {
+                data.clients.push({
+                    id: 'c_' + (base + i),
+                    name,
+                    modalities: ['Musculação'],
+                    day: 'segunda',
+                    time: '',
+                    origem: 'controle-carga',
+                    createdAt: new Date().toISOString()
+                });
+            });
+
+            saveData();
+            renderClientsTab();
+            updateFinanceiroSelects();
+            alert(`${novos.length} aluno(s) importado(s). Ajuste as modalidades e horários de cada um em Clientes.`);
+        }
+
         function openClientDetails(clientId) {
             selectedClientId = clientId;
             const client = data.clients.find(c => c.id === clientId);
@@ -2013,7 +2256,7 @@
                             <tr>
                                 <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
                                 <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
-                                <td>${s.volume} ${s.unit}</td>
+                                <td>${s.volume} ${s.unit || ''}</td>
                                 <td>${s.rpe}/10</td>
                                 <td><span class="risk-badge ${s.risk}">${s.risk === 'low' ? 'Baixo' : s.risk === 'medium' ? 'Médio' : 'Alto'}</span></td>
                                 <td><button class="btn-danger btn-small" onclick="deleteSession('${s.id}')">Deletar</button></td>
@@ -2106,7 +2349,7 @@
                             ${client.modalities.map(mod => {
                                 const volSessions = clientSessions.filter(s => s.modality === mod);
                                 const totalVol = volSessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1);
-                                const unit = volSessions.length > 0 ? volSessions[0].unit : '';
+                                const unit = volSessions.length > 0 ? (volSessions[0].unit || '') : '';
                                 return `
                                     <div class="modality-card" style="border-color: ${MODALITIES[mod].color};">
                                         <div class="modality-icon">${MODALITIES[mod].icon}</div>
@@ -2130,7 +2373,7 @@
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Intensidade</div>
-                                    <div class="stat-value">${(clientSessions.reduce((sum, s) => sum + s.intensity, 0) / clientSessions.length).toFixed(1)}/10</div>
+                                    <div class="stat-value">${avgOf(clientSessions, 'intensity')}/10</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">RPE</div>
@@ -2165,11 +2408,19 @@
                     </div>
 
                     ${clientSessions.length > 0 ? `
-                        <div class="card grid-full">
-                            <div class="card-title">📈 Volume Acumulado</div>
-                            <div class="chart-container">
+                        <div class="card grid-full chart-card">
+                            <div class="chart-head">
+                                <div>
+                                    <div class="chart-title">Volume por semana</div>
+                                    <div class="chart-subtitle">Empilhado por modalidade · ${client.name}</div>
+                                </div>
+                                <button id="periodizationViewBtn" class="chart-toggle" onclick="togglePeriodizationView()">▦ Ver tabela</button>
+                            </div>
+                            <div class="chart-legend" id="periodizationLegend"></div>
+                            <div class="chart-container" id="periodizationChartWrap">
                                 <canvas id="periodizationChart"></canvas>
                             </div>
+                            <div class="chart-table" id="periodizationTable" style="display:none;"></div>
                         </div>
 
                         <div class="card grid-full ai-panel">
@@ -2197,67 +2448,256 @@
             renderPeriodization();
         }
 
+        let periodizationView = 'chart';
+        let periodizationCache = null;
+
+        function avgOf(list, field) {
+            const vals = (list || []).map(x => Number(x && x[field])).filter(v => !isNaN(v));
+            if (!vals.length) return '—';
+            return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+        }
+
         function renderPeriodizationChart(client, sessions) {
             const canvas = document.getElementById('periodizationChart');
             if (!canvas) return;
 
             const weeks = [...new Set(sessions.map(s => parseInt(getWeekNumber(new Date(s.date)))))].sort((a, b) => a - b);
-            const datasets = client.modalities.map(mod => ({
+            const series = client.modalities.map(mod => ({
                 label: mod,
-                data: weeks.map(w => sessions.filter(s => s.modality === mod && parseInt(getWeekNumber(new Date(s.date))) === w).reduce((sum, s) => sum + s.volume, 0)),
-                backgroundColor: MODALITIES[mod].color,
-                borderColor: MODALITIES[mod].color,
-                borderWidth: 1
+                color: MODALITIES[mod]?.color || CHART_INK.muted,
+                values: weeks.map(w => sessions
+                    .filter(s => s.modality === mod && parseInt(getWeekNumber(new Date(s.date))) === w)
+                    .reduce((sum, s) => sum + s.volume, 0))
+            }));
+
+            periodizationCache = { weeks, series };
+            renderPeriodizationLegend(series);
+            renderPeriodizationTable(weeks, series);
+
+            const totals = weeks.map((_, i) => series.reduce((sum, d) => sum + d.values[i], 0));
+            const topIndex = totals.indexOf(Math.max(...totals));
+
+            const datasets = series.map(d => ({
+                label: d.label,
+                data: d.values,
+                backgroundColor: d.color,
+                // Espaçador de 2px na cor da superfície separa cada segmento empilhado
+                borderColor: CHART_SURFACE,
+                borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
+                borderSkipped: false,
+                borderRadius: 4,
+                barPercentage: 0.62,
+                categoryPercentage: 0.78,
+                hoverBackgroundColor: d.color,
+                hoverBorderColor: '#ffffff',
+                hoverBorderWidth: { top: 2, right: 0, bottom: 0, left: 0 }
             }));
 
             if (charts.periodization) charts.periodization.destroy();
 
             charts.periodization = new Chart(canvas, {
                 type: 'bar',
-                data: {
-                    labels: weeks.map(w => `S${w}`),
-                    datasets
-                },
+                data: { labels: weeks.map(w => `S${w}`), datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: { top: 28, right: 8, bottom: 0, left: 0 } },
+                    interaction: { mode: 'index', intersect: false },
+                    animation: { duration: 550, easing: 'easeOutQuart' },
                     scales: {
-                        x: { stacked: true, ticks: { color: '#999' } },
-                        y: { stacked: true, ticks: { color: '#999' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        x: {
+                            stacked: true,
+                            border: { color: 'rgba(255,255,255,0.14)' },
+                            grid: { display: false },
+                            ticks: {
+                                color: CHART_INK.secondary,
+                                font: { family: "'Segoe UI', Roboto, sans-serif", size: 12 },
+                                padding: 8
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: { color: CHART_INK.grid, drawTicks: false },
+                            ticks: {
+                                color: CHART_INK.muted,
+                                font: { family: "'Segoe UI', Roboto, sans-serif", size: 11 },
+                                padding: 10,
+                                maxTicksLimit: 6,
+                                callback: v => v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '') + 'k' : v
+                            },
+                            title: {
+                                display: true,
+                                text: 'Volume',
+                                color: CHART_INK.muted,
+                                font: { size: 11, weight: '500' },
+                                padding: { bottom: 10 }
+                            }
+                        }
                     },
-                    plugins: { legend: { position: 'bottom', labels: { color: '#fff', padding: 15 } } }
-                }
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(12,12,12,0.96)',
+                            borderColor: 'rgba(212,175,55,0.35)',
+                            borderWidth: 1,
+                            titleColor: CHART_INK.primary,
+                            titleFont: { size: 12, weight: '600' },
+                            bodyColor: CHART_INK.secondary,
+                            bodyFont: { size: 12 },
+                            footerColor: '#d4af37',
+                            footerFont: { size: 12, weight: '600' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            boxWidth: 9,
+                            boxHeight: 9,
+                            boxPadding: 6,
+                            usePointStyle: true,
+                            callbacks: {
+                                title: items => `Semana ${items[0].label.replace('S', '')}`,
+                                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR')}`,
+                                footer: items => 'Total: ' +
+                                    items.reduce((sum, i) => sum + i.parsed.y, 0).toLocaleString('pt-BR')
+                            },
+                            filter: item => item.parsed.y > 0
+                        }
+                    }
+                },
+                plugins: [{
+                    // Rótulo direto apenas no pico — nunca um número em cada barra
+                    id: 'peakLabel',
+                    afterDatasetsDraw(chart) {
+                        if (topIndex < 0 || !totals[topIndex]) return;
+                        const { ctx, scales } = chart;
+                        const x = scales.x.getPixelForValue(topIndex);
+                        const y = scales.y.getPixelForValue(totals[topIndex]);
+                        ctx.save();
+                        ctx.font = "600 12px 'Segoe UI', Roboto, sans-serif";
+                        ctx.fillStyle = CHART_INK.primary;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(totals[topIndex].toLocaleString('pt-BR'), x, y - 10);
+                        ctx.font = "500 10px 'Segoe UI', Roboto, sans-serif";
+                        ctx.fillStyle = CHART_INK.muted;
+                        ctx.fillText('pico', x, y - 25);
+                        ctx.restore();
+                    }
+                }]
             });
+        }
+
+        function renderPeriodizationLegend(series) {
+            const el = document.getElementById('periodizationLegend');
+            if (!el) return;
+            el.innerHTML = series.map(d => `
+                <span class="chart-legend-item">
+                    <span class="chart-legend-swatch" style="background:${d.color}"></span>${d.label}
+                </span>
+            `).join('');
+        }
+
+        function renderPeriodizationTable(weeks, series) {
+            const el = document.getElementById('periodizationTable');
+            if (!el) return;
+            const totals = weeks.map((_, i) => series.reduce((sum, d) => sum + d.values[i], 0));
+            el.innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Semana</th>
+                            ${series.map(d => `<th style="text-align:right">${d.label}</th>`).join('')}
+                            <th style="text-align:right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${weeks.map((w, i) => `
+                            <tr>
+                                <td>S${w}</td>
+                                ${series.map(d => `<td style="text-align:right">${d.values[i].toLocaleString('pt-BR')}</td>`).join('')}
+                                <td style="text-align:right"><strong>${totals[i].toLocaleString('pt-BR')}</strong></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function togglePeriodizationView() {
+            periodizationView = periodizationView === 'chart' ? 'table' : 'chart';
+            const wrap = document.getElementById('periodizationChartWrap');
+            const table = document.getElementById('periodizationTable');
+            const btn = document.getElementById('periodizationViewBtn');
+            const isChart = periodizationView === 'chart';
+            if (wrap) wrap.style.display = isChart ? '' : 'none';
+            if (table) table.style.display = isChart ? 'none' : 'block';
+            if (btn) btn.textContent = isChart ? '▦ Ver tabela' : '📊 Ver gráfico';
         }
 
         function renderPeriodizationAI(sessions) {
             const suggestions = [];
-            const totalLoad = sessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0);
-            const avgLoad = totalLoad / sessions.length;
-            const highRisk = sessions.filter(s => s.risk === 'high').length;
+            if (!sessions || !sessions.length) return;
 
-            if (totalLoad > avgLoad * 1.5) {
+            // Carga da sessão = volume x RPE (session-RPE, método de Foster)
+            const byWeek = {};
+            sessions.forEach(s => {
+                const w = parseInt(getWeekNumber(new Date(s.date)));
+                byWeek[w] = (byWeek[w] || 0) + (Number(s.volume) || 0) * (Number(s.rpe) || 0);
+            });
+            const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
+            const loads = weeks.map(w => byWeek[w]);
+
+            const current = loads[loads.length - 1] || 0;
+            const prior = loads.slice(Math.max(0, loads.length - 5), loads.length - 1);
+            const chronic = prior.length ? prior.reduce((a, b) => a + b, 0) / prior.length : 0;
+            const ratio = chronic > 0 ? current / chronic : null;
+
+            if (ratio === null) {
                 suggestions.push({
-                    type: 'warning',
-                    icon: '⚡',
-                    title: 'Carga muito alta',
-                    text: `${Math.round((totalLoad / (avgLoad * 1.5) - 1) * 100)}% acima. Considere descarregamento.`
+                    type: 'success', icon: '📊', title: 'Coletando histórico',
+                    text: 'Registre pelo menos duas semanas para comparar a carga aguda com a crônica.'
+                });
+            } else if (ratio > 1.5) {
+                suggestions.push({
+                    type: 'danger', icon: '⚡', title: 'Pico de carga',
+                    text: `A semana atual está ${Math.round((ratio - 1) * 100)}% acima da média das últimas semanas (razão ${ratio.toFixed(2)}). Risco elevado — considere descarregamento.`
+                });
+            } else if (ratio > 1.3) {
+                suggestions.push({
+                    type: 'warning', icon: '📈', title: 'Progressão acelerada',
+                    text: `Carga ${Math.round((ratio - 1) * 100)}% acima da média (razão ${ratio.toFixed(2)}). Acima da progressão recomendada de 10% por semana.`
+                });
+            } else if (ratio < 0.7) {
+                suggestions.push({
+                    type: 'warning', icon: '📉', title: 'Queda de carga',
+                    text: `Carga ${Math.round((1 - ratio) * 100)}% abaixo da média (razão ${ratio.toFixed(2)}). Se não for descarregamento planejado, pode haver perda de adaptação.`
                 });
             } else {
                 suggestions.push({
-                    type: 'success',
-                    icon: '✓',
-                    title: 'Carga adequada',
-                    text: 'Distribuição dentro dos limites esperados.'
+                    type: 'success', icon: '✓', title: 'Progressão adequada',
+                    text: `Razão carga aguda/crônica em ${ratio.toFixed(2)} — dentro da zona recomendada (0,8 a 1,3).`
                 });
             }
 
+            // Monotonia: média / desvio-padrão das cargas semanais
+            if (loads.length >= 3) {
+                const mean = loads.reduce((a, b) => a + b, 0) / loads.length;
+                const sd = Math.sqrt(loads.reduce((a, b) => a + (b - mean) ** 2, 0) / loads.length);
+                const monotonia = sd > 0 ? mean / sd : 0;
+                if (monotonia > 2) {
+                    suggestions.push({
+                        type: 'warning', icon: '🔁', title: 'Monotonia alta',
+                        text: `Monotonia em ${monotonia.toFixed(2)}. Cargas muito parecidas entre semanas — varie a ondulação para melhorar a recuperação.`
+                    });
+                }
+            }
+
+            const highRisk = sessions.filter(s => s.risk === 'high').length;
             if (highRisk > 0) {
                 suggestions.push({
-                    type: 'danger',
-                    icon: '🔴',
-                    title: 'Alerta de lesão',
-                    text: `${highRisk} sessão(ões) com risco alto. Monitore intensamente.`
+                    type: 'danger', icon: '🔴', title: 'Sessões de risco alto',
+                    text: `${highRisk} sessão(ões) marcada(s) como risco alto. Revise queixas e ajuste a intensidade.`
                 });
             }
 
@@ -2546,7 +2986,7 @@
             }
 
             const totalVolume = filteredSessions.reduce((sum, s) => sum + s.volume, 0);
-            const avgIntensity = (filteredSessions.reduce((sum, s) => sum + s.intensity, 0) / filteredSessions.length).toFixed(1);
+            const avgIntensity = avgOf(filteredSessions, 'intensity');
             const avgRPE = (filteredSessions.reduce((sum, s) => sum + s.rpe, 0) / filteredSessions.length).toFixed(1);
             const cargaTotal = filteredSessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0).toFixed(1);
 
@@ -2590,7 +3030,7 @@
                                 <tr>
                                     <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
                                     <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
-                                    <td>${s.volume} ${s.unit}</td>
+                                    <td>${s.volume} ${s.unit || ''}</td>
                                     <td>${s.rpe}/10</td>
                                     <td>${(s.volume * s.rpe / 10).toFixed(1)}</td>
                                 </tr>
@@ -2640,7 +3080,7 @@
 
         function generatePDFHTML(client, sessions, startDate, endDate) {
             const totalVolume = sessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1);
-            const avgIntensity = (sessions.reduce((sum, s) => sum + s.intensity, 0) / sessions.length).toFixed(1);
+            const avgIntensity = avgOf(sessions, 'intensity');
             const avgRPE = (sessions.reduce((sum, s) => sum + s.rpe, 0) / sessions.length).toFixed(1);
             const cargaTotal = sessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0).toFixed(1);
             const highRisk = sessions.filter(s => s.risk === 'high').length;
@@ -2759,7 +3199,7 @@
                                         <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
                                         <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
                                         <td>${s.type}</td>
-                                        <td>${s.volume} ${s.unit}</td>
+                                        <td>${s.volume} ${s.unit || ''}</td>
                                         <td>${s.rpe}/10</td>
                                         <td>${(s.volume * s.rpe / 10).toFixed(1)}</td>
                                         <td>${s.risk === 'low' ? 'Baixo' : s.risk === 'medium' ? 'Médio' : 'Alto'}</td>
