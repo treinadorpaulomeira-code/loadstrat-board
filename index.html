@@ -1344,12 +1344,12 @@
 
                     <div class="kpi-row">
                         <div class="kpi-tile">
-                            <div class="kpi-label">Sessões · 7 dias</div>
+                            <div class="kpi-label">Sessões da semana</div>
                             <div class="kpi-value" id="kpiWeekSessions">0</div>
                             <div class="kpi-sub" id="kpiWeekSessionsSub">—</div>
                         </div>
                         <div class="kpi-tile">
-                            <div class="kpi-label">Carga · 7 dias</div>
+                            <div class="kpi-label">Carga da semana</div>
                             <div class="kpi-value" id="kpiWeekLoad">0</div>
                             <div class="kpi-sub">u.a. · volume × RPE</div>
                         </div>
@@ -1383,7 +1383,7 @@
                         <div class="card grid-full">
                             <div class="flex-between">
                                 <div class="card-title">🎯 Controle de carga por atleta</div>
-                                <span style="font-size: 0.78rem; color: var(--text-muted);">últimos 7 dias vs. média das 4 semanas anteriores</span>
+                                <span style="font-size: 0.78rem; color: var(--text-muted);">semana atual vs. média das 4 anteriores · método de Foster</span>
                             </div>
                             <div id="athleteLoadTable"></div>
                         </div>
@@ -2895,19 +2895,10 @@
             const suggestions = [];
             if (!sessions || !sessions.length) return;
 
-            // Carga da sessão = volume x RPE (session-RPE, método de Foster)
-            const byWeek = {};
-            sessions.forEach(s => {
-                const w = parseInt(getWeekNumber(new Date(s.date)));
-                byWeek[w] = (byWeek[w] || 0) + (Number(s.volume) || 0) * (Number(s.rpe) || 0);
-            });
-            const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
-            const loads = weeks.map(w => byWeek[w]);
-
-            const current = loads[loads.length - 1] || 0;
-            const prior = loads.slice(Math.max(0, loads.length - 5), loads.length - 1);
-            const chronic = prior.length ? prior.reduce((a, b) => a + b, 0) / prior.length : 0;
-            const ratio = chronic > 0 ? current / chronic : null;
+            // Mesmo núcleo do dashboard: semana ISO atual vs. média das 4 anteriores
+            const ac = acuteChronic(sessions);
+            const ratio = ac.ratio;
+            const loads = ac.priors.concat([ac.acute]);
 
             if (ratio === null) {
                 suggestions.push({
@@ -2936,15 +2927,18 @@
                 });
             }
 
-            // Monotonia: média / desvio-padrão das cargas semanais
-            if (loads.length >= 3) {
-                const mean = loads.reduce((a, b) => a + b, 0) / loads.length;
-                const sd = Math.sqrt(loads.reduce((a, b) => a + (b - mean) ** 2, 0) / loads.length);
-                const monotonia = sd > 0 ? mean / sd : 0;
-                if (monotonia > 2) {
+            // Monotonia e Strain (Foster) — carga diária da semana corrente
+            const ms = monotoniaStrain(sessions);
+            if (ms.monotonia !== null) {
+                if (ms.monotonia > 2) {
                     suggestions.push({
                         type: 'warning', icon: '🔁', title: 'Monotonia alta',
-                        text: `Monotonia em ${monotonia.toFixed(2)}. Cargas muito parecidas entre semanas — varie a ondulação para melhorar a recuperação.`
+                        text: `Monotonia ${ms.monotonia.toFixed(2).replace('.', ',')} e strain ${Math.round(ms.strain).toLocaleString('pt-BR')}. Cargas diárias muito parecidas — varie a ondulação da semana para melhorar a recuperação.`
+                    });
+                } else {
+                    suggestions.push({
+                        type: 'success', icon: '🔁', title: 'Ondulação adequada',
+                        text: `Monotonia ${ms.monotonia.toFixed(2).replace('.', ',')} · strain ${Math.round(ms.strain).toLocaleString('pt-BR')}.`
                     });
                 }
             }
@@ -3156,39 +3150,88 @@
             return x;
         }
 
-        // Razão aguda:crônica em janela móvel de 7 dias (rolling ACWR).
-        // Aguda  = carga dos últimos 7 dias.
-        // Crônica = média semanal dos 28 dias anteriores a essa janela.
-        // Janela móvel evita o viés de comparar uma semana em curso com semanas completas.
-        function acuteChronic(sessions) {
-            const today = startOfDay(new Date());
-            const acuteFrom = today.getTime() - 6 * DAY_MS;          // 7 dias contando hoje
-            const chronicTo = acuteFrom - DAY_MS;
-            const chronicFrom = chronicTo - 27 * DAY_MS;             // 28 dias anteriores
+        // Segunda-feira da semana ISO à qual a data pertence (chave da semana)
+        function weekKey(dateStr) {
+            const x = new Date(dateStr + 'T00:00:00');
+            if (isNaN(x)) return null;
+            const dw = (x.getDay() + 6) % 7;          // 0 = segunda
+            x.setDate(x.getDate() - dw);
+            x.setHours(0, 0, 0, 0);
+            return x;
+        }
 
-            const list = (sessions || []).filter(s => !isNaN(startOfDay(new Date(s.date + 'T00:00:00')).getTime()));
-            let acute = 0, chronicTotal = 0;
-            list.forEach(s => {
-                const t = startOfDay(new Date(s.date + 'T00:00:00')).getTime();
-                const load = sessionLoad(s);
-                if (t >= acuteFrom && t <= today.getTime()) acute += load;
-                else if (t >= chronicFrom && t <= chronicTo) chronicTotal += load;
+        function weekKeyStr(dateStr) {
+            const k = weekKey(dateStr);
+            return k ? k.toISOString().slice(0, 10) : null;
+        }
+
+        // Carga por semana ISO (segunda a domingo)
+        function loadByIsoWeek(sessions) {
+            const map = {};
+            (sessions || []).forEach(s => {
+                const k = weekKeyStr(s.date);
+                if (!k) return;
+                map[k] = (map[k] || 0) + sessionLoad(s);
+            });
+            return map;
+        }
+
+        // Sequência contínua de semanas até a semana atual (semanas sem treino contam como 0)
+        function weekSeries(map, count) {
+            const cur = weekKey(startOfDay(new Date()).toISOString().slice(0, 10));
+            const out = [];
+            for (let i = count - 1; i >= 0; i--) {
+                const d = new Date(cur);
+                d.setDate(d.getDate() - i * 7);
+                const k = d.toISOString().slice(0, 10);
+                out.push({ key: k, load: map[k] || 0 });
+            }
+            return out;
+        }
+
+        // ---- Método de Foster, idêntico ao Controle de Carga Interna ----
+        // Aguda   = carga da semana ISO corrente
+        // Crônica = média das 4 semanas ISO anteriores
+        // ACWR    = aguda / crônica
+        function acuteChronic(sessions) {
+            const map = loadByIsoWeek(sessions);
+            const serie = weekSeries(map, 5);                 // 4 anteriores + a atual
+            const acute = serie[serie.length - 1].load;
+            const priors = serie.slice(0, 4).map(w => w.load);
+            const temHistorico = Object.keys(map).some(k => k < serie[serie.length - 1].key);
+            const chronic = temHistorico ? priors.reduce((a, b) => a + b, 0) / 4 : 0;
+
+            const weeks = Object.keys(map).sort();
+            return {
+                acute, chronic, priors,
+                ratio: chronic > 0 ? acute / chronic : null,
+                weeks, map
+            };
+        }
+
+        // ---- Monotonia e Strain (Foster) ----
+        // Monotonia = média da carga diária da semana / desvio padrão dessa carga
+        // Dias sem treino entram como 0 — a semana sempre tem 7 dias.
+        // Strain = carga semanal x monotonia
+        function monotoniaStrain(sessions) {
+            const cur = weekKey(startOfDay(new Date()).toISOString().slice(0, 10));
+            if (!cur) return { monotonia: null, strain: null, total: 0 };
+
+            const dias = new Array(7).fill(0);
+            (sessions || []).forEach(s => {
+                const t = new Date(s.date + 'T00:00:00');
+                if (isNaN(t)) return;
+                const diff = Math.round((startOfDay(t) - cur) / DAY_MS);
+                if (diff >= 0 && diff < 7) dias[diff] += sessionLoad(s);
             });
 
-            // A base crônica é dividida pelas semanas de histórico REALMENTE disponíveis,
-            // não sempre por 4. Um atleta que começou há 10 dias não tem 4 semanas de base —
-            // dividir por 4 rebaixaria a média e inflaria a razão artificialmente.
-            let baseWeeks = 4;
-            if (list.length) {
-                const first = Math.min(...list.map(s => startOfDay(new Date(s.date + 'T00:00:00')).getTime()));
-                const cobertura = (chronicTo - Math.max(chronicFrom, first)) / (7 * DAY_MS);
-                baseWeeks = Math.max(1, Math.min(4, Math.round(cobertura * 10) / 10));
-            }
+            const total = dias.reduce((a, b) => a + b, 0);
+            if (total === 0) return { monotonia: null, strain: null, total: 0, dias };
 
-            const chronic = chronicTotal / baseWeeks;                // média por semana de histórico
-            const map = loadByWeek(sessions);
-            const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
-            return { acute, chronic, baseWeeks, ratio: chronic > 0 ? acute / chronic : null, weeks, map };
+            const media = total / 7;
+            const dp = Math.sqrt(dias.reduce((a, b) => a + (b - media) ** 2, 0) / 7);
+            const monotonia = dp > 0 ? media / dp : null;
+            return { monotonia, strain: monotonia !== null ? total * monotonia : null, total, dias };
         }
 
         function acwrStatus(ratio) {
@@ -3205,19 +3248,19 @@
             const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
             const currentWeek = weeks.length ? weeks[weeks.length - 1] : null;
 
-            // --- KPIs (janela móvel de 7 dias) ---
-            const today = startOfDay(new Date()).getTime();
-            const from7 = today - 6 * DAY_MS;
-            const weekSessions = allSessions.filter(s => {
-                const t = startOfDay(new Date(s.date + 'T00:00:00')).getTime();
-                return t >= from7 && t <= today;
-            });
+            // --- KPIs (semana ISO corrente, igual ao Controle de Carga) ---
+            const curWeekKey = weekKeyStr(startOfDay(new Date()).toISOString().slice(0, 10));
+            const weekSessions = allSessions.filter(s => weekKeyStr(s.date) === curWeekKey);
             const activeAthletes = new Set(weekSessions.map(s => s.clientId)).size;
+
+            const ini = new Date(curWeekKey + 'T00:00:00');
+            const fim = new Date(ini); fim.setDate(fim.getDate() + 6);
+            const fmt = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
             document.getElementById('kpiWeekSessions').textContent = weekSessions.length;
             document.getElementById('kpiWeekSessionsSub').textContent =
                 allSessions.length === 0 ? 'nenhuma sessão registrada'
-                    : `${activeAthletes} atleta(s) · últimos 7 dias`;
+                    : `${activeAthletes} atleta(s) · ${fmt(ini)} a ${fmt(fim)}`;
 
             const weekLoad = weekSessions.reduce((sum, s) => sum + sessionLoad(s), 0);
             document.getElementById('kpiWeekLoad').textContent = Math.round(weekLoad).toLocaleString('pt-BR');
@@ -3234,7 +3277,8 @@
             const perAthlete = (data.clients || []).map(c => {
                 const ss = allSessions.filter(s => s.clientId === c.id);
                 const a = acuteChronic(ss);
-                return { client: c, ...a, status: acwrStatus(a.ratio), sessions: ss.length };
+                const ms = monotoniaStrain(ss);
+                return { client: c, ...a, ...ms, status: acwrStatus(a.ratio), sessions: ss.length };
             }).filter(a => a.sessions > 0);
 
             const atRisk = perAthlete.filter(a => a.status.cls === 'critical' || a.status.cls === 'warning').length;
@@ -3293,9 +3337,11 @@
                         <thead>
                             <tr>
                                 <th>Atleta</th>
-                                <th style="text-align:right">Carga 7 dias</th>
-                                <th style="text-align:right">Média semanal</th>
-                                <th style="text-align:right">Razão A:C</th>
+                                <th style="text-align:right">Carga semana</th>
+                                <th style="text-align:right">Média 4 sem.</th>
+                                <th style="text-align:right">ACWR</th>
+                                <th style="text-align:right">Monotonia</th>
+                                <th style="text-align:right">Strain</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -3304,8 +3350,10 @@
                                 <tr>
                                     <td>${a.client.name}</td>
                                     <td style="text-align:right"><strong>${Math.round(a.acute).toLocaleString('pt-BR')}</strong></td>
-                                    <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}<span style="color:var(--text-muted); font-size:0.76rem;">${a.chronic ? ' /' + String(a.baseWeeks).replace('.', ',') + 'sem' : ''}</span></td>
+                                    <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}</td>
                                     <td style="text-align:right">${a.ratio === null ? '—' : a.ratio.toFixed(2).replace('.', ',')}</td>
+                                    <td style="text-align:right">${a.monotonia === null || a.monotonia === undefined ? '—' : a.monotonia.toFixed(2).replace('.', ',')}</td>
+                                    <td style="text-align:right">${a.strain === null || a.strain === undefined ? '—' : Math.round(a.strain).toLocaleString('pt-BR')}</td>
                                     <td><span class="status-pill ${a.status.cls}">${a.status.icon} ${a.status.label}</span></td>
                                 </tr>
                             `).join('')}
