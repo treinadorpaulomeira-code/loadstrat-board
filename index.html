@@ -1114,6 +1114,41 @@
                         <button style="width: 100%; margin-top: 10px;" onclick="importDataFromFile()">📤 Importar Dados</button>
                         <button style="width: 100%; margin-top: 10px; background: var(--danger);" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
                     </div>
+
+                    <div class="card">
+                        <div class="card-title">☁️ Banco de Dados na Nuvem</div>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+                            Conecte um banco Firebase para acessar seus dados do notebook e do iPhone,
+                            sempre sincronizados. Sem isso, os dados ficam salvos apenas neste navegador.
+                        </p>
+
+                        <div class="form-group">
+                            <label>Status da nuvem</label>
+                            <input type="text" id="cloudStatus" value="Não conectado" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Configuração do Firebase (cole o objeto firebaseConfig aqui)</label>
+                            <textarea id="cloudConfigInput" rows="8" placeholder='{
+  "apiKey": "...",
+  "authDomain": "seu-projeto.firebaseapp.com",
+  "projectId": "seu-projeto",
+  "storageBucket": "seu-projeto.appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Código do seu espaço (mesmo código em todos os aparelhos)</label>
+                            <input type="text" id="cloudWorkspaceInput" placeholder="Ex: paulo-meira-2026">
+                        </div>
+
+                        <button style="width: 100%; margin-top: 8px;" onclick="connectCloud()">☁️ Conectar à Nuvem</button>
+                        <button style="width: 100%; margin-top: 10px;" onclick="cloudPushNow()">⬆️ Enviar dados agora</button>
+                        <button style="width: 100%; margin-top: 10px;" onclick="cloudPullNow()">⬇️ Baixar dados da nuvem</button>
+                        <button style="width: 100%; margin-top: 10px; background: var(--bg-tertiary);" onclick="disconnectCloud()">🔌 Desconectar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1343,9 +1378,153 @@
         // ============================================
 
         function saveData() {
+            data.updatedAt = Date.now();
             localStorage.setItem('pmaData', JSON.stringify(data));
             checkSync();
+            cloudPush();
         }
+
+        /* ============ NUVEM (FIREBASE FIRESTORE) ============ */
+        const CLOUD_KEYS = { config: 'pmaCloudConfig', workspace: 'pmaCloudWorkspace' };
+        let cloudDb = null, cloudDocRef = null, cloudReady = false;
+        let cloudApplyingRemote = false, cloudPushTimer = null;
+
+        function setCloudStatus(msg) {
+            const el = document.getElementById('cloudStatus');
+            if (el) el.value = msg;
+        }
+
+        function loadFirebaseScripts() {
+            if (window.firebase && window.firebase.firestore) return Promise.resolve();
+            const urls = [
+                'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js'
+            ];
+            return urls.reduce((chain, url) => chain.then(() => new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = url;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Falha ao carregar ' + url));
+                document.head.appendChild(s);
+            })), Promise.resolve());
+        }
+
+        async function initCloud(config, workspace, opts = {}) {
+            await loadFirebaseScripts();
+            if (!firebase.apps.length) firebase.initializeApp(config);
+            cloudDb = firebase.firestore();
+            cloudDocRef = cloudDb.collection('loadstrat').doc(workspace);
+            cloudReady = true;
+
+            cloudDocRef.onSnapshot(snap => {
+                if (!snap.exists) return;
+                const remote = snap.data();
+                if (!remote || !remote.payload) return;
+                let parsed;
+                try { parsed = JSON.parse(remote.payload); } catch (e) { return; }
+                const remoteAt = remote.updatedAt || 0;
+                const localAt = data.updatedAt || 0;
+                if (remoteAt <= localAt) return;
+                cloudApplyingRemote = true;
+                data = parsed;
+                localStorage.setItem('pmaData', JSON.stringify(data));
+                cloudApplyingRemote = false;
+                setCloudStatus('☁️ Atualizado da nuvem — ' + new Date(remoteAt).toLocaleTimeString('pt-BR'));
+                if (typeof renderAll === 'function') { try { renderAll(); } catch (e) {} }
+                else { location.reload(); }
+            }, err => setCloudStatus('⚠️ Erro na nuvem: ' + err.message));
+
+            setCloudStatus('☁️ Conectado — espaço "' + workspace + '"');
+            if (opts.pushAfterConnect) cloudPushNow();
+        }
+
+        function cloudPush() {
+            if (!cloudReady || !cloudDocRef || cloudApplyingRemote) return;
+            clearTimeout(cloudPushTimer);
+            cloudPushTimer = setTimeout(() => {
+                cloudDocRef.set({
+                    payload: JSON.stringify(data),
+                    updatedAt: data.updatedAt || Date.now()
+                }).then(() => {
+                    setCloudStatus('☁️ Salvo na nuvem — ' + new Date().toLocaleTimeString('pt-BR'));
+                }).catch(err => setCloudStatus('⚠️ Falha ao salvar: ' + err.message));
+            }, 800);
+        }
+
+        function cloudPushNow() {
+            if (!cloudReady) { setCloudStatus('Conecte a nuvem primeiro'); return; }
+            data.updatedAt = Date.now();
+            cloudApplyingRemote = false;
+            cloudPush();
+        }
+
+        async function cloudPullNow() {
+            if (!cloudReady || !cloudDocRef) { setCloudStatus('Conecte a nuvem primeiro'); return; }
+            try {
+                const snap = await cloudDocRef.get();
+                if (!snap.exists) { setCloudStatus('Nada salvo na nuvem ainda'); return; }
+                const remote = snap.data();
+                data = JSON.parse(remote.payload);
+                localStorage.setItem('pmaData', JSON.stringify(data));
+                setCloudStatus('☁️ Dados baixados da nuvem');
+                location.reload();
+            } catch (err) {
+                setCloudStatus('⚠️ Erro ao baixar: ' + err.message);
+            }
+        }
+
+        async function connectCloud() {
+            const raw = (document.getElementById('cloudConfigInput').value || '').trim();
+            const workspace = (document.getElementById('cloudWorkspaceInput').value || '').trim();
+            if (!raw || !workspace) { setCloudStatus('Preencha a configuração e o código do espaço'); return; }
+
+            let config;
+            try {
+                const cleaned = raw
+                    .replace(/^\s*(const|var|let)\s+\w+\s*=\s*/, '')
+                    .replace(/;\s*$/, '')
+                    .replace(/(['"])?([A-Za-z0-9_]+)\1?\s*:/g, '"$2":')
+                    .replace(/'/g, '"')
+                    .replace(/,(\s*[}\]])/g, '$1');
+                config = JSON.parse(cleaned);
+            } catch (e) {
+                setCloudStatus('⚠️ Configuração inválida — cole o objeto completo do Firebase');
+                return;
+            }
+
+            try {
+                setCloudStatus('Conectando...');
+                localStorage.setItem(CLOUD_KEYS.config, JSON.stringify(config));
+                localStorage.setItem(CLOUD_KEYS.workspace, workspace);
+                await initCloud(config, workspace, { pushAfterConnect: true });
+            } catch (err) {
+                setCloudStatus('⚠️ ' + err.message);
+            }
+        }
+
+        function disconnectCloud() {
+            localStorage.removeItem(CLOUD_KEYS.config);
+            localStorage.removeItem(CLOUD_KEYS.workspace);
+            cloudReady = false; cloudDocRef = null;
+            setCloudStatus('Não conectado');
+        }
+
+        async function autoConnectCloud() {
+            const rawConfig = localStorage.getItem(CLOUD_KEYS.config);
+            const workspace = localStorage.getItem(CLOUD_KEYS.workspace);
+            if (!rawConfig || !workspace) { setCloudStatus('Não conectado'); return; }
+            const cfgEl = document.getElementById('cloudConfigInput');
+            const wsEl = document.getElementById('cloudWorkspaceInput');
+            if (cfgEl) cfgEl.value = JSON.stringify(JSON.parse(rawConfig), null, 2);
+            if (wsEl) wsEl.value = workspace;
+            try {
+                await initCloud(JSON.parse(rawConfig), workspace);
+            } catch (err) {
+                setCloudStatus('⚠️ ' + err.message);
+            }
+        }
+
+        window.addEventListener('load', () => setTimeout(autoConnectCloud, 600));
 
         function loadData() {
             const stored = localStorage.getItem('pmaData');
