@@ -557,6 +557,24 @@
             margin-top: 12px;
         }
 
+        .dash-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+        }
+
+        .dash-bar-info {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
         /* ============ KPI TILES ============ */
         .kpi-row {
             display: grid;
@@ -1317,6 +1335,13 @@
             <div class="content">
                 <!-- DASHBOARD TAB -->
                 <div id="dashboard" class="tab-content active">
+                    <div class="dash-bar">
+                        <div class="dash-bar-info">
+                            <span id="dashSyncInfo">Sincronizando com o Controle de Carga…</span>
+                        </div>
+                        <button class="chart-toggle" onclick="syncControleCargaManual()">🔄 Sincronizar agora</button>
+                    </div>
+
                     <div class="kpi-row">
                         <div class="kpi-tile">
                             <div class="kpi-label">Sessões na semana</div>
@@ -1400,7 +1425,7 @@
                         <div class="flex-between">
                             <div class="card-title">👥 Gerenciar Clientes</div>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button onclick="importarAlunosControleCarga()" style="background: rgba(255,255,255,0.06); color: var(--primary); border: 1px solid var(--border);">⬇️ Importar do Controle de Carga</button>
+                                <button onclick="syncControleCargaManual()" style="background: rgba(255,255,255,0.06); color: var(--primary); border: 1px solid var(--border);">🔄 Sincronizar Controle de Carga</button>
                                 <button onclick="openAddClientModal()">➕ Novo Cliente</button>
                             </div>
                         </div>
@@ -1998,6 +2023,11 @@
         }
 
         window.addEventListener('load', () => setTimeout(cloudBoot, 500));
+        // Puxa o Controle de Carga ao abrir e a cada 10 min
+        window.addEventListener('load', () => {
+            setTimeout(() => syncControleCarga({ silent: true }), 1200);
+            setInterval(() => syncControleCarga({ silent: true }), 10 * 60 * 1000);
+        });
 
         function loadData() {
             const stored = localStorage.getItem('pmaData');
@@ -2007,43 +2037,160 @@
             syncWithLocalStorage();
         }
 
+        // ============================================
+        // SINCRONIZAÇÃO COM O CONTROLE DE CARGA INTERNA
+        // Backend: Google Apps Script — mesma origem, mesmo token de sessão
+        // ============================================
+        const CARGA_API = 'https://script.google.com/macros/s/AKfycbxUegHMm5jJWUkD2lUX7_3K_aYMPw4_crYLRYUD-G4z68ff2yDZ4A2si4vSxfPDx1x_/exec';
+        const CARGA_TOKEN_KEY = 'cargaTreino_token';
+
+        function cargaToken() {
+            return localStorage.getItem(CARGA_TOKEN_KEY);
+        }
+
+        async function cargaApi(action) {
+            const token = cargaToken();
+            if (!token) throw new Error('sem-token');
+            const res = await fetch(CARGA_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, token })
+            });
+            const json = await res.json();
+            if (!json || json.ok === false) throw new Error(json && json.erro ? json.erro : 'falha na API');
+            return json;
+        }
+
         function syncWithLocalStorage() {
-            // Tenta sincronizar com localStorage compartilhado do site de controle
+            // mantido por compatibilidade — a sincronização real é a syncControleCarga()
+        }
+
+        async function syncControleCarga(opts = {}) {
+            const silent = !!opts.silent;
+            if (!cargaToken()) {
+                if (!silent) updateSyncStatus('⚠️ Entre no Controle de Carga primeiro');
+                return { ok: false, reason: 'sem-token' };
+            }
+
+            updateSyncStatus('🔄 Sincronizando...');
             try {
-                const controlSiteData = localStorage.getItem('controleCargaData');
-                if (controlSiteData) {
-                    const externalSessions = JSON.parse(controlSiteData);
-                    // Mescla dados sem duplicar
-                    if (Array.isArray(externalSessions)) {
-                        externalSessions.forEach(extSession => {
-                            const exists = data.sessions.some(s =>
-                                s.clientId === extSession.clientId &&
-                                s.date === extSession.date
-                            );
-                            if (!exists) {
-                                data.sessions.push(extSession);
-                            }
-                        });
-                        saveData();
-                        updateSyncStatus('✓ Sincronizado com site de controle');
+                const [alunosRes, sessoesRes] = await Promise.all([
+                    cargaApi('listAlunos'),
+                    cargaApi('getSessoesTodos')
+                ]);
+
+                const alunos = alunosRes.alunos || [];
+                const sessoes = sessoesRes.sessoes || [];
+
+                // --- 1. Clientes ---
+                let novosClientes = 0;
+                const byUser = {};
+                alunos.forEach(a => {
+                    let c = data.clients.find(x => x.cargaUsuario === a.usuario)
+                         || data.clients.find(x => normalizeName(x.name) === normalizeName(a.nome));
+                    if (!c) {
+                        c = {
+                            id: 'c_cc_' + a.usuario,
+                            name: a.nome,
+                            modalities: ['Musculação'],
+                            day: '',
+                            time: '',
+                            origem: 'controle-carga',
+                            createdAt: new Date().toISOString()
+                        };
+                        data.clients.push(c);
+                        novosClientes++;
                     }
-                }
-            } catch (e) {
-                console.log('Sincronização localStorage indisponível');
+                    c.cargaUsuario = a.usuario;
+                    if (a.ativo === false) c.inativo = true;
+                    byUser[a.usuario] = c;
+                });
+
+                // --- 2. Sessões ---
+                // volume = tempo (min), rpe = PSE → volume × RPE reproduz a carga (u.a.) do controle
+                const existentes = new Set(data.sessions.filter(s => s.cargaId).map(s => String(s.cargaId)));
+                let novasSessoes = 0, atualizadas = 0;
+
+                sessoes.forEach(sv => {
+                    const client = byUser[sv.aluno_usuario];
+                    if (!client) return;
+
+                    const date = String(sv.data).slice(0, 10);
+                    const tempo = Number(sv.tempo_min) || 0;
+                    const pse = Number(sv.pse) || 0;
+                    const cargaUA = Number(sv.carga_ua) || (tempo * pse);
+                    const isDescanso = String(sv.tipo).toLowerCase() === 'descanso';
+
+                    const payload = {
+                        clientId: client.id,
+                        modality: client.modalities[0] || 'Musculação',
+                        date,
+                        volume: tempo,
+                        unit: 'min',
+                        rpe: pse,
+                        intensity: pse,
+                        cargaUA,
+                        type: isDescanso ? 'Descanso' : 'Treino',
+                        notes: sv.observacoes || '',
+                        risk: pse >= 9 ? 'high' : (pse >= 7 ? 'medium' : 'low'),
+                        origem: 'controle-carga',
+                        cargaId: String(sv.id)
+                    };
+
+                    const existing = data.sessions.find(s => String(s.cargaId) === String(sv.id));
+                    if (existing) {
+                        Object.assign(existing, payload, { id: existing.id });
+                        atualizadas++;
+                    } else {
+                        data.sessions.push({ id: 's_cc_' + sv.id, ...payload });
+                        novasSessoes++;
+                    }
+                });
+
+                data.lastCargaSync = Date.now();
+                saveData();
+
+                if (typeof renderDashboard === 'function') renderDashboard();
+                if (typeof renderClientsTab === 'function') renderClientsTab();
+                if (typeof renderPlanner === 'function') renderPlanner();
+                if (typeof updateFinanceiroSelects === 'function') updateFinanceiroSelects();
+
+                const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                updateSyncStatus(`✓ ${sessoes.length} sessões · ${hora}`);
+
+                return { ok: true, novosClientes, novasSessoes, atualizadas, totalSessoes: sessoes.length, totalAlunos: alunos.length };
+            } catch (err) {
+                const msg = err.message === 'sem-token'
+                    ? '⚠️ Entre no Controle de Carga'
+                    : '⚠️ Falha na sincronização';
+                updateSyncStatus(msg);
+                console.warn('Sync controle de carga:', err);
+                return { ok: false, reason: err.message };
             }
         }
 
-        function checkSync() {
-            try {
-                const lastSync = localStorage.getItem('lastPmaSync');
-                const now = Date.now();
-                if (!lastSync || (now - parseInt(lastSync)) > 60000) {
-                    localStorage.setItem('lastPmaSync', now.toString());
-                    updateSyncStatus('✓ Sincronizado');
+        async function syncControleCargaManual() {
+            const r = await syncControleCarga();
+            if (!r.ok) {
+                if (r.reason === 'sem-token') {
+                    alert('Para sincronizar, abra o Controle de Carga Interna e faça login.\n\nDepois volte aqui e clique em Sincronizar novamente.');
+                } else {
+                    alert('Não foi possível sincronizar agora. Verifique sua conexão e tente de novo.');
                 }
-            } catch (e) {
-                updateSyncStatus('⚠️ Sem sincronização');
+                return;
             }
+            alert(
+                'Sincronizado com o Controle de Carga\n\n' +
+                `Atletas: ${r.totalAlunos} (${r.novosClientes} novo(s))\n` +
+                `Sessões: ${r.totalSessoes} (${r.novasSessoes} nova(s), ${r.atualizadas} atualizada(s))`
+            );
+        }
+
+        function checkSync() {
+            const last = data.lastCargaSync;
+            if (!last) return;
+            const mins = Math.round((Date.now() - last) / 60000);
+            if (mins > 60) updateSyncStatus('↻ Sincronização pendente');
         }
 
         function updateSyncStatus(message) {
@@ -2229,49 +2376,10 @@
             updateFinanceiroSelects();
         }
 
-        // ============================================
-        // IMPORTAR ALUNOS DO CONTROLE DE CARGA
-        // ============================================
-        const CONTROLE_CARGA_ALUNOS = [
-            'Ana Carolina Mesquita', 'Ana Graciano', 'Ana Paula Trotta', 'Antonio Trotta',
-            'Bruno Passadore', 'Gabriela Vizel', 'Guilherme J Silva', 'Ingrid Lima Meira',
-            'Jessica J. Coelho', 'Joao Victor Zambon', 'Marcela Fernandes', 'Melina Kania',
-            'Paulo Meira', 'Rodrigo Carlos da Silva', 'Tatiana Dalmasio'
-        ];
-
         function normalizeName(n) {
             return (n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
         }
 
-        function importarAlunosControleCarga() {
-            const existentes = new Set(data.clients.map(c => normalizeName(c.name)));
-            const novos = CONTROLE_CARGA_ALUNOS.filter(n => !existentes.has(normalizeName(n)));
-
-            if (novos.length === 0) {
-                alert('Todos os alunos do Controle de Carga já estão cadastrados.');
-                return;
-            }
-
-            if (!confirm(`Importar ${novos.length} aluno(s) do Controle de Carga?\n\n` + novos.join('\n'))) return;
-
-            let base = Date.now();
-            novos.forEach((name, i) => {
-                data.clients.push({
-                    id: 'c_' + (base + i),
-                    name,
-                    modalities: ['Musculação'],
-                    day: 'segunda',
-                    time: '',
-                    origem: 'controle-carga',
-                    createdAt: new Date().toISOString()
-                });
-            });
-
-            saveData();
-            renderClientsTab();
-            updateFinanceiroSelects();
-            alert(`${novos.length} aluno(s) importado(s). Ajuste as modalidades e horários de cada um em Clientes.`);
-        }
 
         function openClientDetails(clientId) {
             selectedClientId = clientId;
@@ -3099,6 +3207,18 @@
             document.getElementById('kpiAtRisk').className = 'kpi-value' + (atRisk > 0 ? ' status-warning' : '');
             document.getElementById('kpiAtRiskSub').textContent = `de ${perAthlete.length} atleta(s) com treinos`;
 
+            const infoEl = document.getElementById('dashSyncInfo');
+            if (infoEl) {
+                const total = allSessions.length;
+                const doCC = allSessions.filter(x => x.origem === 'controle-carga').length;
+                const last = data.lastCargaSync
+                    ? new Date(data.lastCargaSync).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : null;
+                infoEl.textContent = total === 0
+                    ? 'Nenhuma sessão ainda — clique em Sincronizar agora para puxar o Controle de Carga.'
+                    : `${total} sessões · ${doCC} vindas do Controle de Carga` + (last ? ` · última sincronização ${last}` : '');
+            }
+
             renderTeamLoadChart(weeks, map);
             renderAthleteLoadTable(perAthlete);
 
@@ -3574,14 +3694,7 @@
         }
 
         function syncWithControlSite() {
-            updateSyncStatus('🔄 Sincronizando...');
-
-            // Tenta sincronizar com localStorage
-            setTimeout(() => {
-                syncWithLocalStorage();
-                updateReportPreview();
-                updateSyncStatus('✓ Sincronizado com site de controle');
-            }, 1000);
+            syncControleCargaManual();
         }
 
         document.addEventListener('change', (e) => {
