@@ -1344,12 +1344,12 @@
 
                     <div class="kpi-row">
                         <div class="kpi-tile">
-                            <div class="kpi-label">Sessões na semana</div>
+                            <div class="kpi-label">Sessões · 7 dias</div>
                             <div class="kpi-value" id="kpiWeekSessions">0</div>
                             <div class="kpi-sub" id="kpiWeekSessionsSub">—</div>
                         </div>
                         <div class="kpi-tile">
-                            <div class="kpi-label">Carga da semana</div>
+                            <div class="kpi-label">Carga · 7 dias</div>
                             <div class="kpi-value" id="kpiWeekLoad">0</div>
                             <div class="kpi-sub">u.a. · volume × RPE</div>
                         </div>
@@ -1383,7 +1383,7 @@
                         <div class="card grid-full">
                             <div class="flex-between">
                                 <div class="card-title">🎯 Controle de carga por atleta</div>
-                                <span style="font-size: 0.78rem; color: var(--text-muted);">semana atual vs. média das anteriores</span>
+                                <span style="font-size: 0.78rem; color: var(--text-muted);">últimos 7 dias vs. média das 4 semanas anteriores</span>
                             </div>
                             <div id="athleteLoadTable"></div>
                         </div>
@@ -3148,15 +3148,36 @@
             return map;
         }
 
-        // Razão aguda:crônica — semana atual sobre a média das até 4 anteriores
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        function startOfDay(d) {
+            const x = new Date(d);
+            x.setHours(0, 0, 0, 0);
+            return x;
+        }
+
+        // Razão aguda:crônica em janela móvel de 7 dias (rolling ACWR).
+        // Aguda  = carga dos últimos 7 dias.
+        // Crônica = média semanal dos 28 dias anteriores a essa janela.
+        // Janela móvel evita o viés de comparar uma semana em curso com semanas completas.
         function acuteChronic(sessions) {
+            const today = startOfDay(new Date());
+            const acuteFrom = today.getTime() - 6 * DAY_MS;          // 7 dias contando hoje
+            const chronicTo = acuteFrom - DAY_MS;
+            const chronicFrom = chronicTo - 27 * DAY_MS;             // 28 dias anteriores
+
+            let acute = 0, chronicTotal = 0;
+            (sessions || []).forEach(s => {
+                const t = startOfDay(new Date(s.date + 'T00:00:00')).getTime();
+                if (isNaN(t)) return;
+                const load = sessionLoad(s);
+                if (t >= acuteFrom && t <= today.getTime()) acute += load;
+                else if (t >= chronicFrom && t <= chronicTo) chronicTotal += load;
+            });
+
+            const chronic = chronicTotal / 4;                        // média por semana
             const map = loadByWeek(sessions);
             const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
-            if (!weeks.length) return { acute: 0, chronic: 0, ratio: null, weeks, map };
-            const loads = weeks.map(w => map[w]);
-            const acute = loads[loads.length - 1];
-            const prior = loads.slice(Math.max(0, loads.length - 5), loads.length - 1);
-            const chronic = prior.length ? prior.reduce((a, b) => a + b, 0) / prior.length : 0;
             return { acute, chronic, ratio: chronic > 0 ? acute / chronic : null, weeks, map };
         }
 
@@ -3174,17 +3195,21 @@
             const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
             const currentWeek = weeks.length ? weeks[weeks.length - 1] : null;
 
-            // --- KPIs ---
-            const weekSessions = currentWeek === null ? [] :
-                allSessions.filter(s => parseInt(getWeekNumber(new Date(s.date))) === currentWeek);
+            // --- KPIs (janela móvel de 7 dias) ---
+            const today = startOfDay(new Date()).getTime();
+            const from7 = today - 6 * DAY_MS;
+            const weekSessions = allSessions.filter(s => {
+                const t = startOfDay(new Date(s.date + 'T00:00:00')).getTime();
+                return t >= from7 && t <= today;
+            });
             const activeAthletes = new Set(weekSessions.map(s => s.clientId)).size;
 
             document.getElementById('kpiWeekSessions').textContent = weekSessions.length;
             document.getElementById('kpiWeekSessionsSub').textContent =
-                currentWeek === null ? 'nenhuma sessão registrada'
-                    : `${activeAthletes} atleta(s) · semana ${currentWeek}`;
+                allSessions.length === 0 ? 'nenhuma sessão registrada'
+                    : `${activeAthletes} atleta(s) · últimos 7 dias`;
 
-            const weekLoad = currentWeek === null ? 0 : map[currentWeek];
+            const weekLoad = weekSessions.reduce((sum, s) => sum + sessionLoad(s), 0);
             document.getElementById('kpiWeekLoad').textContent = Math.round(weekLoad).toLocaleString('pt-BR');
 
             const team = acuteChronic(allSessions);
@@ -3193,7 +3218,7 @@
             acwrEl.textContent = team.ratio === null ? '—' : team.ratio.toFixed(2).replace('.', ',');
             acwrEl.className = 'kpi-value status-' + st.cls;
             document.getElementById('kpiACWRSub').textContent =
-                team.ratio === null ? 'precisa de 2+ semanas' : `${st.icon} ${st.label} · ideal 0,8–1,3`;
+                team.ratio === null ? 'sem histórico suficiente' : `${st.icon} ${st.label} · ideal 0,8–1,3`;
 
             // --- Por atleta ---
             const perAthlete = (data.clients || []).map(c => {
@@ -3258,8 +3283,8 @@
                         <thead>
                             <tr>
                                 <th>Atleta</th>
-                                <th style="text-align:right">Carga semana</th>
-                                <th style="text-align:right">Média anterior</th>
+                                <th style="text-align:right">Carga 7 dias</th>
+                                <th style="text-align:right">Média semanal</th>
                                 <th style="text-align:right">Razão A:C</th>
                                 <th>Status</th>
                             </tr>
