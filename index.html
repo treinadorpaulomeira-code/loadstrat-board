@@ -1,0 +1,2461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Profissional Unificado - Paulo Meira</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #d4af37;
+            --primary-dark: #b8941f;
+            --primary-light: #f4cf57;
+            --bg-dark: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #999999;
+            --border: #444444;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --info: #2196f3;
+            --corrida: #2196f3;
+            --musculacao: #9c27b0;
+            --pliometria: #f44336;
+            --potencia: #ff9800;
+            --resistencia: #4caf50;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.6);
+            border-right: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .sidebar-logo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-item:hover {
+            border-color: var(--primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .sidebar-item.active {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ============ MAIN ============ */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 2px solid var(--primary);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .time-display {
+            font-size: 1.3rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 40px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, transparent 100%);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ============ CARDS ============ */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ============ GRID ============ */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .grid-full {
+            grid-column: 1 / -1;
+        }
+
+        /* ============ STATS ============ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ============ FORMS ============ */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* ============ BUTTONS ============ */
+        button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53935;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* ============ MODAL ============ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        /* ============ LISTS & TABLES ============ */
+        .list-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .list-item-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .table thead {
+            background: rgba(212, 175, 55, 0.1);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ============ RISK PANEL ============ */
+        .risk-panel {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .risk-item.high {
+            border-left: 3px solid var(--danger);
+        }
+
+        .risk-item.medium {
+            border-left: 3px solid var(--warning);
+        }
+
+        .risk-item.low {
+            border-left: 3px solid var(--success);
+        }
+
+        .risk-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .risk-badge.high {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        .risk-badge.medium {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .risk-badge.low {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        /* ============ CHART ============ */
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 20px;
+        }
+
+        /* ============ MODALITIES ============ */
+        .modalities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modality-card {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .modality-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .modality-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .modality-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .modality-volume {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ============ AI PANEL ============ */
+        .ai-panel {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .ai-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .ai-title {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .ai-suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ai-suggestion {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .ai-suggestion.warning {
+            border-left-color: var(--warning);
+            background: rgba(255, 152, 0, 0.1);
+        }
+
+        .ai-suggestion.danger {
+            border-left-color: var(--danger);
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .ai-suggestion.success {
+            border-left-color: var(--success);
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        /* ============ MESOCYCLE ============ */
+        .mesocycle-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .mesocycle-btn {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .mesocycle-btn:hover {
+            border-color: var(--primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .mesocycle-btn.active {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-right: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        /* ============ SYNC INDICATOR ============ */
+        .sync-indicator {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid var(--success);
+            border-radius: 6px;
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-left: 12px;
+        }
+
+        .sync-indicator.loading {
+            background: rgba(255, 152, 0, 0.2);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .sync-indicator.error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .pdf-preview {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .pdf-content {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 20px;
+        }
+
+        .pdf-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .pdf-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .pdf-section {
+            margin-bottom: 25px;
+        }
+
+        .pdf-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #d4af37;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 8px;
+        }
+
+        .pdf-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .pdf-stat {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #d4af37;
+        }
+
+        .pdf-stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .pdf-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .pdf-table th {
+            background: #f5f5f5;
+            color: #333;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .pdf-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .pdf-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #d4af37;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .pdf-logo {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d4af37;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">⚡ PMA</div>
+                <div class="sidebar-subtitle">Sistema Profissional</div>
+            </div>
+
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Módulos</div>
+                    <div class="sidebar-menu">
+                        <div class="sidebar-item active" onclick="switchTab('dashboard')">
+                            📊 Dashboard
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('periodization')">
+                            📈 Periodização
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('planner')">
+                            📅 Planner
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('clientes')">
+                            👥 Clientes
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('financeiro')">
+                            💰 Financeiro
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('relatorios')">
+                            📄 Relatórios
+                        </div>
+                        <div class="sidebar-item" onclick="switchTab('config')">
+                            ⚙️ Configurações
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN -->
+        <div class="main-content">
+            <div class="header">
+                <div>
+                    <div class="header-title" id="headerTitle">📊 Dashboard</div>
+                    <div class="header-subtitle" id="headerSubtitle">Bem-vindo</div>
+                </div>
+                <div>
+                    <div id="syncStatus" class="sync-indicator">✓ Sincronizado</div>
+                    <div class="time-display" id="timeDisplay">00:00</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- DASHBOARD TAB -->
+                <div id="dashboard" class="tab-content active">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-title">📋 Resumo Hoje</div>
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <div class="stat-label">Clientes</div>
+                                    <div class="stat-value" id="dashTodayClients">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Receita</div>
+                                    <div class="stat-value" id="dashTodayRevenue">R$0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Sessões</div>
+                                    <div class="stat-value" id="dashTodaySessions">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">📊 Semana</div>
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <div class="stat-label">Receita</div>
+                                    <div class="stat-value" id="dashWeekRevenue">R$0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Média/dia</div>
+                                    <div class="stat-value" id="dashWeekAvg">R$0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card grid-full">
+                            <div class="card-title">🔄 Próximos Atendimentos</div>
+                            <div id="nextAppointments" style="color: var(--text-muted);">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERIODIZATION TAB -->
+                <div id="periodization" class="tab-content">
+                    <div class="card grid-full">
+                        <div class="flex-between">
+                            <div class="card-title">📈 Periodização MultiSports</div>
+                            <button onclick="openClientSelector()">Selecionar Cliente</button>
+                        </div>
+                        <div id="periodizationContent">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <div>Selecione um cliente para visualizar periodização</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PLANNER TAB -->
+                <div id="planner" class="tab-content">
+                    <div class="card grid-full">
+                        <div class="card-title">📅 Agenda Semanal</div>
+                        <div id="plannerContent">Carregando planner...</div>
+                    </div>
+                </div>
+
+                <!-- CLIENTES TAB -->
+                <div id="clientes" class="tab-content">
+                    <div class="card grid-full">
+                        <div class="flex-between">
+                            <div class="card-title">👥 Gerenciar Clientes</div>
+                            <button onclick="openAddClientModal()">➕ Novo Cliente</button>
+                        </div>
+                        <div id="clientesList"></div>
+                    </div>
+                </div>
+
+                <!-- FINANCEIRO TAB -->
+                <div id="financeiro" class="tab-content">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-title">💰 KPIs</div>
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <div class="stat-label">Hoje</div>
+                                    <div class="stat-value" id="finToday">R$0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Semana</div>
+                                    <div class="stat-value" id="finWeek">R$0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Mês</div>
+                                    <div class="stat-value" id="finMonth">R$0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total</div>
+                                    <div class="stat-value" id="finTotal">R$0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">➕ Adicionar Receita</div>
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <select id="finClient">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor (R$)</label>
+                                <input type="number" id="finAmount" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select id="finType">
+                                    <option value="Sessão">Sessão Pessoal</option>
+                                    <option value="Pacote">Pacote</option>
+                                    <option value="Avaliação">Avaliação</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <button onclick="addTransaction()" style="width: 100%;">Registrar</button>
+                        </div>
+
+                        <div class="card grid-full">
+                            <div class="card-title">📋 Últimas Transações</div>
+                            <div id="transactionsList" class="mt-20"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RELATORIOS TAB -->
+                <div id="relatorios" class="tab-content">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-title">📄 Gerar Relatório de Carga</div>
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <select id="reportClientSelect">
+                                    <option value="">Selecione um cliente...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Data Inicial</label>
+                                    <input type="date" id="reportStartDate">
+                                </div>
+                                <div class="form-group">
+                                    <label>Data Final</label>
+                                    <input type="date" id="reportEndDate">
+                                </div>
+                            </div>
+
+                            <button style="width: 100%; margin-top: 20px;" onclick="generatePDF()">📥 Gerar PDF</button>
+                            <button style="width: 100%; margin-top: 10px;" onclick="syncWithControlSite()">🔄 Sincronizar com Site</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">ℹ️ Informações</div>
+                            <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary);">
+                                <p><strong>Funcionalidades:</strong></p>
+                                <p>✓ Gerar PDF profissional</p>
+                                <p>✓ Sincronizar com site de controle</p>
+                                <p>✓ Análise automática de carga</p>
+                                <p style="margin-top: 16px; color: var(--primary);"><strong>Métricas incluídas:</strong></p>
+                                <p>• Volume total<br>
+                                • Intensidade média<br>
+                                • Carga (Volume × RPE)<br>
+                                • Risco de lesão<br>
+                                • Por modalidade</p>
+                            </div>
+                        </div>
+
+                        <div class="card grid-full">
+                            <div class="card-title">📊 Prévia dos Dados</div>
+                            <div id="reportPreview" style="color: var(--text-muted); text-align: center; padding: 40px;">
+                                Selecione um cliente para visualizar dados
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIG TAB -->
+                <div id="config" class="tab-content">
+                    <div class="card">
+                        <div class="card-title">⚙️ Configurações do Sistema</div>
+                        <div class="form-group">
+                            <label>Tema</label>
+                            <select id="themeSelect">
+                                <option value="dark">Escuro (Padrão)</option>
+                                <option value="light">Claro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Moeda</label>
+                            <input type="text" value="R$" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Status de Sincronização</label>
+                            <input type="text" id="syncStatus" value="Verificando..." readonly>
+                        </div>
+                        <button style="width: 100%; margin-top: 20px;" onclick="exportData()">📥 Exportar Dados (JSON)</button>
+                        <button style="width: 100%; margin-top: 10px;" onclick="importDataFromFile()">📤 Importar Dados</button>
+                        <button style="width: 100%; margin-top: 10px; background: var(--danger);" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CLIENT SELECTOR -->
+    <div id="clientSelectorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Selecionar Cliente</div>
+                <button class="modal-close" onclick="closeModal('clientSelectorModal')">✕</button>
+            </div>
+            <div id="clientSelectorList"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CLIENT -->
+    <div id="addClientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Novo Cliente</div>
+                <button class="modal-close" onclick="closeModal('addClientModal')">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="clientName" placeholder="Ex: João Silva">
+            </div>
+
+            <div class="form-group">
+                <label>Modalidades</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="Corrida" class="modality-checkbox"> 🏃 Corrida
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="Musculação" class="modality-checkbox"> 💪 Musculação
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="Pliometria" class="modality-checkbox"> 💣 Pliometria
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="Potência" class="modality-checkbox"> ⚡ Potência
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="Resistência" class="modality-checkbox"> 🫁 Resistência
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dia Padrão</label>
+                    <select id="clientDay">
+                        <option value="">-</option>
+                        <option value="segunda">Segunda</option>
+                        <option value="terca">Terça</option>
+                        <option value="quarta">Quarta</option>
+                        <option value="quinta">Quinta</option>
+                        <option value="sexta">Sexta</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Hora Padrão</label>
+                    <input type="time" id="clientTime">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addClientModal')">Cancelar</button>
+                <button onclick="saveClient()">Cadastrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CLIENT DETAILS -->
+    <div id="clientDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="detailsTitle">Detalhes</div>
+                <button class="modal-close" onclick="closeModal('clientDetailsModal')">✕</button>
+            </div>
+
+            <div id="clientDetailsContent"></div>
+
+            <div class="modal-footer">
+                <button class="btn-danger btn-small" id="deleteClientBtn" onclick="deleteSelectedClient()">Deletar</button>
+                <button class="btn-secondary" onclick="closeModal('clientDetailsModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD SESSION -->
+    <div id="addSessionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Registrar Sessão</div>
+                <button class="modal-close" onclick="closeModal('addSessionModal')">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="sessionDate">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Modalidade</label>
+                    <select id="sessionModality">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="sessionType">
+                        <option value="Força">💪 Força</option>
+                        <option value="Potência">⚡ Potência</option>
+                        <option value="Pliometria">💣 Pliometria</option>
+                        <option value="Resistência">🫁 Resistência</option>
+                        <option value="Velocidade">🚀 Velocidade</option>
+                        <option value="Mobilidade">🧘 Mobilidade</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Intensidade (1-10)</label>
+                    <input type="number" id="sessionIntensity" placeholder="5" min="1" max="10" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Volume</label>
+                    <input type="number" id="sessionVolume" placeholder="Ex: 50" step="0.1" min="0">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Unidade</label>
+                    <select id="sessionUnit">
+                        <option value="km">km</option>
+                        <option value="séries">séries</option>
+                        <option value="reps">reps</option>
+                        <option value="min">minutos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>RPE (0-10)</label>
+                    <input type="number" id="sessionRPE" placeholder="6" min="0" max="10" step="1">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Risco</label>
+                    <select id="sessionRisk">
+                        <option value="low">✓ Baixo</option>
+                        <option value="medium">⚠️ Médio</option>
+                        <option value="high">🔴 Alto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mesociclo</label>
+                    <select id="sessionMeso">
+                        <option value="Prep">Preparatório</option>
+                        <option value="Hipertrofia">Hipertrofia</option>
+                        <option value="Força">Força</option>
+                        <option value="Potência">Potência</option>
+                        <option value="Descarregamento">Descarregamento</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notas</label>
+                <textarea id="sessionNotes" placeholder="Ex: sem dores, ótimo treino" rows="3"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addSessionModal')">Cancelar</button>
+                <button onclick="saveSession()">Registrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // DATA & STATE
+        // ============================================
+
+        let data = {
+            clients: [],
+            sessions: [],
+            transactions: [],
+            defaultSchedule: [],
+            weeklySchedule: [],
+            lastWeekNumber: null,
+            mesocycle: 'Hipertrofia'
+        };
+
+        let selectedClientId = null;
+        let selectedSessionEdit = null;
+        let charts = {};
+
+        const MODALITIES = {
+            'Corrida': { icon: '🏃', color: '#2196f3' },
+            'Musculação': { icon: '💪', color: '#9c27b0' },
+            'Pliometria': { icon: '💣', color: '#f44336' },
+            'Potência': { icon: '⚡', color: '#ff9800' },
+            'Resistência': { icon: '🫁', color: '#4caf50' }
+        };
+
+        const DAYS = {
+            'segunda': 'Segunda',
+            'terca': 'Terça',
+            'quarta': 'Quarta',
+            'quinta': 'Quinta',
+            'sexta': 'Sexta',
+            'sabado': 'Sábado',
+            'domingo': 'Domingo'
+        };
+
+        // ============================================
+        // STORAGE & SYNC
+        // ============================================
+
+        function saveData() {
+            localStorage.setItem('pmaData', JSON.stringify(data));
+            checkSync();
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('pmaData');
+            if (stored) {
+                data = JSON.parse(stored);
+            }
+            syncWithLocalStorage();
+        }
+
+        function syncWithLocalStorage() {
+            // Tenta sincronizar com localStorage compartilhado do site de controle
+            try {
+                const controlSiteData = localStorage.getItem('controleCargaData');
+                if (controlSiteData) {
+                    const externalSessions = JSON.parse(controlSiteData);
+                    // Mescla dados sem duplicar
+                    if (Array.isArray(externalSessions)) {
+                        externalSessions.forEach(extSession => {
+                            const exists = data.sessions.some(s =>
+                                s.clientId === extSession.clientId &&
+                                s.date === extSession.date
+                            );
+                            if (!exists) {
+                                data.sessions.push(extSession);
+                            }
+                        });
+                        saveData();
+                        updateSyncStatus('✓ Sincronizado com site de controle');
+                    }
+                }
+            } catch (e) {
+                console.log('Sincronização localStorage indisponível');
+            }
+        }
+
+        function checkSync() {
+            try {
+                const lastSync = localStorage.getItem('lastPmaSync');
+                const now = Date.now();
+                if (!lastSync || (now - parseInt(lastSync)) > 60000) {
+                    localStorage.setItem('lastPmaSync', now.toString());
+                    updateSyncStatus('✓ Sincronizado');
+                }
+            } catch (e) {
+                updateSyncStatus('⚠️ Sem sincronização');
+            }
+        }
+
+        function updateSyncStatus(message) {
+            const statusEl = document.getElementById('syncStatus');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = 'sync-indicator';
+                if (message.includes('Sem')) statusEl.className += ' error';
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pma-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function importDataFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        data = { ...data, ...imported };
+                        saveData();
+                        alert('✓ Dados importados com sucesso!');
+                        location.reload();
+                    } catch (err) {
+                        alert('❌ Erro ao importar arquivo');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ ATENÇÃO: Isso vai DELETAR todos os dados! Tem certeza?')) {
+                if (confirm('Tem 100% de certeza? Não tem volta!')) {
+                    localStorage.removeItem('pmaData');
+                    data = {
+                        clients: [],
+                        sessions: [],
+                        transactions: [],
+                        defaultSchedule: [],
+                        weeklySchedule: [],
+                        lastWeekNumber: null,
+                        mesocycle: 'Hipertrofia'
+                    };
+                    location.reload();
+                }
+            }
+        }
+
+        // ============================================
+        // UTILS
+        // ============================================
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function checkWeekReset() {
+            const currentWeek = getWeekNumber(new Date());
+            if (currentWeek !== data.lastWeekNumber) {
+                data.lastWeekNumber = currentWeek;
+                data.weeklySchedule = [];
+                saveData();
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.sidebar-item').classList.add('active');
+
+            const titles = {
+                'dashboard': '📊 Dashboard',
+                'periodization': '📈 Periodização',
+                'planner': '📅 Planner',
+                'clientes': '👥 Clientes',
+                'financeiro': '💰 Financeiro',
+                'relatorios': '📄 Relatórios',
+                'config': '⚙️ Configurações'
+            };
+
+            document.getElementById('headerTitle').textContent = titles[tabName] || 'Sistema';
+            document.getElementById('headerSubtitle').textContent = '';
+
+            if (tabName === 'dashboard') renderDashboard();
+            if (tabName === 'periodization') renderPeriodization();
+            if (tabName === 'planner') renderPlanner();
+            if (tabName === 'clientes') renderClientsTab();
+            if (tabName === 'financeiro') renderFinanceiro();
+            if (tabName === 'relatorios') renderRelatoriostab();
+        }
+
+        // ============================================
+        // CLIENTS
+        // ============================================
+
+        function renderClientsTab() {
+            const container = document.getElementById('clientesList');
+
+            if (data.clients.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhum cliente cadastrado</div>';
+                return;
+            }
+
+            container.innerHTML = data.clients.map(client => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-title">${client.name}</div>
+                        <div class="list-item-subtitle">
+                            ${client.modalities.map(m => `<span class="tag">${MODALITIES[m]?.icon} ${m}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-secondary btn-small" onclick="openClientDetails('${client.id}')">Editar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddClientModal() {
+            document.getElementById('clientName').value = '';
+            document.querySelectorAll('.modality-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('clientDay').value = '';
+            document.getElementById('clientTime').value = '';
+            document.getElementById('addClientModal').classList.add('active');
+        }
+
+        function saveClient() {
+            const name = document.getElementById('clientName').value.trim();
+            const modalities = Array.from(document.querySelectorAll('.modality-checkbox:checked')).map(cb => cb.value);
+            const day = document.getElementById('clientDay').value;
+            const time = document.getElementById('clientTime').value;
+
+            if (!name || modalities.length === 0) {
+                alert('Preencha nome e modalidades');
+                return;
+            }
+
+            const client = {
+                id: 'c_' + Date.now(),
+                name,
+                modalities,
+                day,
+                time,
+                createdAt: new Date().toISOString()
+            };
+
+            data.clients.push(client);
+            saveData();
+            closeModal('addClientModal');
+            renderClientsTab();
+            updateFinanceiroSelects();
+        }
+
+        function openClientDetails(clientId) {
+            selectedClientId = clientId;
+            const client = data.clients.find(c => c.id === clientId);
+            if (!client) return;
+
+            const content = document.getElementById('clientDetailsContent');
+            content.innerHTML = `
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" id="editClientName" value="${client.name}">
+                </div>
+                <div class="form-group">
+                    <label>Modalidades</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        ${['Corrida', 'Musculação', 'Pliometria', 'Potência', 'Resistência'].map(m => `
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="${m}" class="edit-modality-checkbox" ${client.modalities.includes(m) ? 'checked' : ''}>
+                                ${MODALITIES[m]?.icon} ${m}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dia</label>
+                        <select id="editClientDay">
+                            <option value="">-</option>
+                            ${Object.entries(DAYS).map(([key, val]) => `
+                                <option value="${key}" ${client.day === key ? 'selected' : ''}>${val}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="time" id="editClientTime" value="${client.time || ''}">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--text-primary);">Sessões Registradas</h3>
+                <div id="clientSessions"></div>
+            `;
+
+            renderClientSessions(clientId);
+            document.getElementById('detailsTitle').textContent = client.name;
+            document.getElementById('clientDetailsModal').classList.add('active');
+        }
+
+        function renderClientSessions(clientId) {
+            const container = document.getElementById('clientSessions');
+            const sessions = data.sessions.filter(s => s.clientId === clientId).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Nenhuma sessão registrada</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Modalidade</th>
+                            <th>Volume</th>
+                            <th>RPE</th>
+                            <th>Risco</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sessions.map(s => `
+                            <tr>
+                                <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
+                                <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                <td>${s.volume} ${s.unit}</td>
+                                <td>${s.rpe}/10</td>
+                                <td><span class="risk-badge ${s.risk}">${s.risk === 'low' ? 'Baixo' : s.risk === 'medium' ? 'Médio' : 'Alto'}</span></td>
+                                <td><button class="btn-danger btn-small" onclick="deleteSession('${s.id}')">Deletar</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function deleteSelectedClient() {
+            if (!selectedClientId) return;
+            if (!confirm('Deletar cliente e todas as suas sessões?')) return;
+
+            data.clients = data.clients.filter(c => c.id !== selectedClientId);
+            data.sessions = data.sessions.filter(s => s.clientId !== selectedClientId);
+            data.transactions = data.transactions.filter(t => t.clientId !== selectedClientId);
+
+            saveData();
+            closeModal('clientDetailsModal');
+            renderClientsTab();
+            updateFinanceiroSelects();
+        }
+
+        function deleteSession(sessionId) {
+            if (!confirm('Deletar sessão?')) return;
+            data.sessions = data.sessions.filter(s => s.id !== sessionId);
+            saveData();
+            renderClientSessions(selectedClientId);
+        }
+
+        // ============================================
+        // PERIODIZATION
+        // ============================================
+
+        function openClientSelector() {
+            const list = document.getElementById('clientSelectorList');
+            list.innerHTML = data.clients.map(c => `
+                <div class="list-item" onclick="selectClientForPeriod('${c.id}')">
+                    <div class="list-item-content">
+                        <div class="list-item-title">${c.name}</div>
+                        <div class="list-item-subtitle">${c.modalities.join(', ')}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            if (data.clients.length === 0) {
+                list.innerHTML = '<div class="empty-state">Nenhum cliente cadastrado</div>';
+            }
+
+            document.getElementById('clientSelectorModal').classList.add('active');
+        }
+
+        function selectClientForPeriod(clientId) {
+            selectedClientId = clientId;
+            closeModal('clientSelectorModal');
+            renderPeriodization();
+        }
+
+        function renderPeriodization() {
+            if (!selectedClientId) {
+                document.getElementById('periodizationContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div>Selecione um cliente</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const client = data.clients.find(c => c.id === selectedClientId);
+            const clientSessions = data.sessions.filter(s => s.clientId === selectedClientId);
+
+            let html = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: var(--primary); margin-bottom: 16px;">Mesociclo Atual</h3>
+                    <div class="mesocycle-selector">
+                        ${['Prep', 'Hipertrofia', 'Força', 'Potência', 'Descarregamento'].map(m => `
+                            <button class="mesocycle-btn ${data.mesocycle === m ? 'active' : ''}" onclick="setMesocycle('${m}')">${m}</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <button onclick="openAddSessionModal()" style="margin-bottom: 20px; width: 100%;">➕ Registrar Sessão</button>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">🏋️ Modalidades</div>
+                        <div class="modalities-grid">
+                            ${client.modalities.map(mod => {
+                                const volSessions = clientSessions.filter(s => s.modality === mod);
+                                const totalVol = volSessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1);
+                                const unit = volSessions.length > 0 ? volSessions[0].unit : '';
+                                return `
+                                    <div class="modality-card" style="border-color: ${MODALITIES[mod].color};">
+                                        <div class="modality-icon">${MODALITIES[mod].icon}</div>
+                                        <div class="modality-name">${mod}</div>
+                                        <div class="modality-volume">${totalVol} ${unit}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📊 Resumo</div>
+                        <div class="stats-grid">
+                            ${clientSessions.length === 0 ? `
+                                <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Nenhuma sessão</div>
+                            ` : `
+                                <div class="stat-box">
+                                    <div class="stat-label">Volume Total</div>
+                                    <div class="stat-value">${clientSessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1)}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Intensidade</div>
+                                    <div class="stat-value">${(clientSessions.reduce((sum, s) => sum + s.intensity, 0) / clientSessions.length).toFixed(1)}/10</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">RPE</div>
+                                    <div class="stat-value">${(clientSessions.reduce((sum, s) => sum + s.rpe, 0) / clientSessions.length).toFixed(1)}/10</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Alto Risco</div>
+                                    <div class="stat-value" style="color: ${clientSessions.filter(s => s.risk === 'high').length > 0 ? 'var(--danger)' : 'var(--success)'};">${clientSessions.filter(s => s.risk === 'high').length}</div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    <div class="card grid-full">
+                        <div class="card-title">⚠️ Indicadores de Lesão</div>
+                        <div class="risk-panel">
+                            ${clientSessions.length === 0 ? `<div style="text-align: center; color: var(--text-muted);">Sem dados</div>` : `
+                                <div class="risk-item low">
+                                    <span>✓ Sessões Seguras</span>
+                                    <span class="risk-badge low">${clientSessions.filter(s => s.risk === 'low').length}</span>
+                                </div>
+                                <div class="risk-item medium">
+                                    <span>⚠️ Risco Moderado</span>
+                                    <span class="risk-badge medium">${clientSessions.filter(s => s.risk === 'medium').length}</span>
+                                </div>
+                                <div class="risk-item high">
+                                    <span>🔴 Risco Alto</span>
+                                    <span class="risk-badge high">${clientSessions.filter(s => s.risk === 'high').length}</span>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    ${clientSessions.length > 0 ? `
+                        <div class="card grid-full">
+                            <div class="card-title">📈 Volume Acumulado</div>
+                            <div class="chart-container">
+                                <canvas id="periodizationChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card grid-full ai-panel">
+                            <div class="ai-header">
+                                <div style="font-size: 1.5rem;">🤖</div>
+                                <div class="ai-title">Assistente de Performance</div>
+                            </div>
+                            <div class="ai-suggestions" id="periodizationAI"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('periodizationContent').innerHTML = html;
+
+            if (clientSessions.length > 0) {
+                setTimeout(() => renderPeriodizationChart(client, clientSessions), 100);
+                setTimeout(() => renderPeriodizationAI(clientSessions), 100);
+            }
+        }
+
+        function setMesocycle(meso) {
+            data.mesocycle = meso;
+            saveData();
+            renderPeriodization();
+        }
+
+        function renderPeriodizationChart(client, sessions) {
+            const canvas = document.getElementById('periodizationChart');
+            if (!canvas) return;
+
+            const weeks = [...new Set(sessions.map(s => parseInt(getWeekNumber(new Date(s.date)))))].sort((a, b) => a - b);
+            const datasets = client.modalities.map(mod => ({
+                label: mod,
+                data: weeks.map(w => sessions.filter(s => s.modality === mod && parseInt(getWeekNumber(new Date(s.date))) === w).reduce((sum, s) => sum + s.volume, 0)),
+                backgroundColor: MODALITIES[mod].color,
+                borderColor: MODALITIES[mod].color,
+                borderWidth: 1
+            }));
+
+            if (charts.periodization) charts.periodization.destroy();
+
+            charts.periodization = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: weeks.map(w => `S${w}`),
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#999' } },
+                        y: { stacked: true, ticks: { color: '#999' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    },
+                    plugins: { legend: { position: 'bottom', labels: { color: '#fff', padding: 15 } } }
+                }
+            });
+        }
+
+        function renderPeriodizationAI(sessions) {
+            const suggestions = [];
+            const totalLoad = sessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0);
+            const avgLoad = totalLoad / sessions.length;
+            const highRisk = sessions.filter(s => s.risk === 'high').length;
+
+            if (totalLoad > avgLoad * 1.5) {
+                suggestions.push({
+                    type: 'warning',
+                    icon: '⚡',
+                    title: 'Carga muito alta',
+                    text: `${Math.round((totalLoad / (avgLoad * 1.5) - 1) * 100)}% acima. Considere descarregamento.`
+                });
+            } else {
+                suggestions.push({
+                    type: 'success',
+                    icon: '✓',
+                    title: 'Carga adequada',
+                    text: 'Distribuição dentro dos limites esperados.'
+                });
+            }
+
+            if (highRisk > 0) {
+                suggestions.push({
+                    type: 'danger',
+                    icon: '🔴',
+                    title: 'Alerta de lesão',
+                    text: `${highRisk} sessão(ões) com risco alto. Monitore intensamente.`
+                });
+            }
+
+            document.getElementById('periodizationAI').innerHTML = suggestions.map(s => `
+                <div class="ai-suggestion ${s.type}">
+                    <strong>${s.icon} ${s.title}</strong><br>${s.text}
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // SESSIONS
+        // ============================================
+
+        function openAddSessionModal() {
+            if (!selectedClientId) {
+                alert('Selecione um cliente primeiro');
+                return;
+            }
+
+            const client = data.clients.find(c => c.id === selectedClientId);
+            const modalitySelect = document.getElementById('sessionModality');
+            modalitySelect.innerHTML = '<option value="">Selecione...</option>';
+            client.modalities.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m;
+                option.textContent = `${MODALITIES[m].icon} ${m}`;
+                modalitySelect.appendChild(option);
+            });
+
+            document.getElementById('sessionDate').value = getTodayDate();
+            document.getElementById('sessionIntensity').value = '5';
+            document.getElementById('sessionVolume').value = '';
+            document.getElementById('sessionRPE').value = '6';
+            document.getElementById('sessionRisk').value = 'low';
+            document.getElementById('sessionMeso').value = data.mesocycle;
+            document.getElementById('sessionNotes').value = '';
+
+            document.getElementById('addSessionModal').classList.add('active');
+        }
+
+        function saveSession() {
+            if (!selectedClientId) return;
+
+            const date = document.getElementById('sessionDate').value;
+            const modality = document.getElementById('sessionModality').value;
+            const type = document.getElementById('sessionType').value;
+            const intensity = parseInt(document.getElementById('sessionIntensity').value);
+            const volume = parseFloat(document.getElementById('sessionVolume').value);
+            const unit = document.getElementById('sessionUnit').value;
+            const rpe = parseInt(document.getElementById('sessionRPE').value);
+            const risk = document.getElementById('sessionRisk').value;
+            const meso = document.getElementById('sessionMeso').value;
+            const notes = document.getElementById('sessionNotes').value;
+
+            if (!date || !modality || !volume) {
+                alert('Preencha data, modalidade e volume');
+                return;
+            }
+
+            const week = getWeekNumber(new Date(date));
+
+            data.sessions.push({
+                id: 's_' + Date.now(),
+                clientId: selectedClientId,
+                date,
+                week,
+                modality,
+                type,
+                intensity,
+                volume,
+                unit,
+                rpe,
+                risk,
+                meso,
+                notes,
+                createdAt: new Date().toISOString()
+            });
+
+            saveData();
+            closeModal('addSessionModal');
+            renderPeriodization();
+            renderClientSessions(selectedClientId);
+        }
+
+        // ============================================
+        // FINANCEIRO
+        // ============================================
+
+        function renderFinanceiro() {
+            updateFinanceiroKPIs();
+            updateFinanceiroSelects();
+            renderTransactions();
+        }
+
+        function updateFinanceiroKPIs() {
+            const today = getTodayDate();
+            const todayTransactions = data.transactions.filter(t => t.date === today);
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+            const weekTransactions = data.transactions.filter(t => new Date(t.date) >= weekStart);
+            const monthTransactions = data.transactions.filter(t => t.date.substring(0, 7) === today.substring(0, 7));
+            const total = data.transactions.reduce((sum, t) => sum + t.amount, 0);
+
+            document.getElementById('finToday').textContent = 'R$ ' + todayTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
+            document.getElementById('finWeek').textContent = 'R$ ' + weekTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
+            document.getElementById('finMonth').textContent = 'R$ ' + monthTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
+            document.getElementById('finTotal').textContent = 'R$ ' + total.toFixed(2);
+        }
+
+        function updateFinanceiroSelects() {
+            const select = document.getElementById('finClient');
+            select.innerHTML = '<option value="">Selecione...</option>';
+            data.clients.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+        }
+
+        function addTransaction() {
+            const clientId = document.getElementById('finClient').value;
+            const amount = parseFloat(document.getElementById('finAmount').value);
+            const type = document.getElementById('finType').value;
+
+            if (!clientId || !amount) {
+                alert('Preencha cliente e valor');
+                return;
+            }
+
+            data.transactions.push({
+                id: 't_' + Date.now(),
+                clientId,
+                amount,
+                type,
+                date: getTodayDate(),
+                createdAt: new Date().toISOString()
+            });
+
+            saveData();
+            document.getElementById('finAmount').value = '';
+            document.getElementById('finClient').value = '';
+            renderFinanceiro();
+        }
+
+        function renderTransactions() {
+            const container = document.getElementById('transactionsList');
+            const transactions = data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20);
+
+            if (transactions.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Nenhuma transação</div>';
+                return;
+            }
+
+            container.innerHTML = transactions.map(t => {
+                const client = data.clients.find(c => c.id === t.clientId);
+                return `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${client?.name || 'Desconhecido'}</div>
+                            <div class="list-item-subtitle">${t.type} • ${new Date(t.date).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; color: var(--success);">+R$ ${t.amount.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // DASHBOARD
+        // ============================================
+
+        function renderDashboard() {
+            const today = getTodayDate();
+            const todayClients = new Set(data.sessions.filter(s => s.date === today).map(s => s.clientId)).size;
+            const todayRevenue = data.transactions.filter(t => t.date === today).reduce((sum, t) => sum + t.amount, 0);
+            const todaySession = data.sessions.filter(s => s.date === today).length;
+
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+            const weekTransactions = data.transactions.filter(t => new Date(t.date) >= weekStart);
+            const weekRevenue = weekTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const weekAvg = weekRevenue / 7;
+
+            document.getElementById('dashTodayClients').textContent = todayClients;
+            document.getElementById('dashTodayRevenue').textContent = 'R$ ' + todayRevenue.toFixed(2);
+            document.getElementById('dashTodaySessions').textContent = todaySession;
+            document.getElementById('dashWeekRevenue').textContent = 'R$ ' + weekRevenue.toFixed(2);
+            document.getElementById('dashWeekAvg').textContent = 'R$ ' + weekAvg.toFixed(2);
+
+            const upcoming = data.clients
+                .filter(c => c.day && c.time)
+                .map(c => ({ ...c, dayNum: Object.keys(DAYS).indexOf(c.day) }))
+                .sort((a, b) => a.dayNum - b.dayNum)
+                .slice(0, 5);
+
+            const appointmentsHtml = upcoming.length === 0
+                ? '<div style="color: var(--text-muted);">Nenhum agendamento</div>'
+                : upcoming.map(c => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${c.name}</div>
+                            <div class="list-item-subtitle">${DAYS[c.day]} às ${c.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+            document.getElementById('nextAppointments').innerHTML = appointmentsHtml;
+        }
+
+        // ============================================
+        // PLANNER
+        // ============================================
+
+        function renderPlanner() {
+            const container = document.getElementById('plannerContent');
+            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+            const html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 20px;">
+                    ${days.map(day => {
+                        const dayEvents = data.clients.filter(c => c.day === day);
+                        return `
+                            <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                                <div style="font-weight: 600; color: var(--primary); margin-bottom: 12px;">${DAYS[day]}</div>
+                                ${dayEvents.map(c => `
+                                    <div style="background: rgba(212, 175, 55, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9rem;">
+                                        <div style="color: var(--text-primary);">${c.name}</div>
+                                        <div style="color: var(--text-muted); font-size: 0.85rem;">${c.time || 'Sem hora'}</div>
+                                    </div>
+                                `).join('')}
+                                ${dayEvents.length === 0 ? '<div style="color: var(--text-muted); font-size: 0.9rem;">Sem atendimentos</div>' : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // ============================================
+        // RELATORIOS & PDF
+        // ============================================
+
+        function renderRelatoriostab() {
+            const select = document.getElementById('reportClientSelect');
+            select.innerHTML = '<option value="">Selecione um cliente...</option>';
+            data.clients.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            document.getElementById('reportEndDate').value = getTodayDate();
+            document.getElementById('reportStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+
+            updateReportPreview();
+        }
+
+        function updateReportPreview() {
+            const clientId = document.getElementById('reportClientSelect').value;
+            if (!clientId) {
+                document.getElementById('reportPreview').innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">Selecione um cliente para visualizar dados</div>';
+                return;
+            }
+
+            const client = data.clients.find(c => c.id === clientId);
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            const filteredSessions = data.sessions
+                .filter(s => s.clientId === clientId && s.date >= startDate && s.date <= endDate)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (filteredSessions.length === 0) {
+                document.getElementById('reportPreview').innerHTML = '<div style="color: var(--text-warning); text-align: center; padding: 40px;">⚠️ Nenhuma sessão neste período</div>';
+                return;
+            }
+
+            const totalVolume = filteredSessions.reduce((sum, s) => sum + s.volume, 0);
+            const avgIntensity = (filteredSessions.reduce((sum, s) => sum + s.intensity, 0) / filteredSessions.length).toFixed(1);
+            const avgRPE = (filteredSessions.reduce((sum, s) => sum + s.rpe, 0) / filteredSessions.length).toFixed(1);
+            const cargaTotal = filteredSessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0).toFixed(1);
+
+            const html = `
+                <div style="text-align: left;">
+                    <div style="background: rgba(212,175,55,0.1); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">Período: ${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">Sessões</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">${filteredSessions.length}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">Volume Total</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">${totalVolume.toFixed(1)}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">Intensidade Média</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">${avgIntensity}/10</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">Carga Total</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">${cargaTotal}</div>
+                        </div>
+                    </div>
+
+                    <table class="table" style="margin-top: 16px;">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Modalidade</th>
+                                <th>Volume</th>
+                                <th>RPE</th>
+                                <th>Carga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredSessions.map(s => `
+                                <tr>
+                                    <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
+                                    <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                    <td>${s.volume} ${s.unit}</td>
+                                    <td>${s.rpe}/10</td>
+                                    <td>${(s.volume * s.rpe / 10).toFixed(1)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('reportPreview').innerHTML = html;
+        }
+
+        function generatePDF() {
+            const clientId = document.getElementById('reportClientSelect').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            if (!clientId || !startDate || !endDate) {
+                alert('Preencha todos os campos');
+                return;
+            }
+
+            const client = data.clients.find(c => c.id === clientId);
+            const filteredSessions = data.sessions
+                .filter(s => s.clientId === clientId && s.date >= startDate && s.date <= endDate)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (filteredSessions.length === 0) {
+                alert('Nenhuma sessão neste período');
+                return;
+            }
+
+            // Create PDF HTML
+            const pdfHTML = generatePDFHTML(client, filteredSessions, startDate, endDate);
+
+            // Use html2pdf to generate
+            const opt = {
+                margin: 10,
+                filename: `relatorio-${client.name.replace(' ', '_')}-${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+
+            html2pdf().set(opt).from(pdfHTML).save();
+        }
+
+        function generatePDFHTML(client, sessions, startDate, endDate) {
+            const totalVolume = sessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1);
+            const avgIntensity = (sessions.reduce((sum, s) => sum + s.intensity, 0) / sessions.length).toFixed(1);
+            const avgRPE = (sessions.reduce((sum, s) => sum + s.rpe, 0) / sessions.length).toFixed(1);
+            const cargaTotal = sessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0).toFixed(1);
+            const highRisk = sessions.filter(s => s.risk === 'high').length;
+            const mediumRisk = sessions.filter(s => s.risk === 'medium').length;
+            const lowRisk = sessions.filter(s => s.risk === 'low').length;
+
+            const modalityBreakdown = {};
+            client.modalities.forEach(m => {
+                const modalitySessions = sessions.filter(s => s.modality === m);
+                if (modalitySessions.length > 0) {
+                    modalityBreakdown[m] = {
+                        sessions: modalitySessions.length,
+                        volume: modalitySessions.reduce((sum, s) => sum + s.volume, 0).toFixed(1),
+                        carga: modalitySessions.reduce((sum, s) => sum + (s.volume * s.rpe / 10), 0).toFixed(1)
+                    };
+                }
+            });
+
+            return `
+                <div class="pdf-content">
+                    <div class="pdf-header">
+                        <div class="pdf-logo">⚡ Paulo Meira - Performance & Prevenção</div>
+                        <div class="pdf-title">Relatório de Controle de Carga</div>
+                        <div class="pdf-subtitle">${client.name}</div>
+                    </div>
+
+                    <div class="pdf-section">
+                        <div class="pdf-section-title">Informações do Relatório</div>
+                        <p><strong>Cliente:</strong> ${client.name}</p>
+                        <p><strong>Período:</strong> ${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Modalidades:</strong> ${client.modalities.join(', ')}</p>
+                        <p><strong>Total de Sessões:</strong> ${sessions.length}</p>
+                    </div>
+
+                    <div class="pdf-section">
+                        <div class="pdf-section-title">Resumo Executivo</div>
+                        <div class="pdf-stats">
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Volume Total</div>
+                                <div class="pdf-stat-value">${totalVolume}</div>
+                            </div>
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Carga Total</div>
+                                <div class="pdf-stat-value">${cargaTotal}</div>
+                            </div>
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Intensidade Média</div>
+                                <div class="pdf-stat-value">${avgIntensity}/10</div>
+                            </div>
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">RPE Médio</div>
+                                <div class="pdf-stat-value">${avgRPE}/10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pdf-section">
+                        <div class="pdf-section-title">Indicadores de Risco</div>
+                        <div class="pdf-stats">
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Baixo Risco</div>
+                                <div class="pdf-stat-value" style="color: #4caf50;">${lowRisk}</div>
+                            </div>
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Médio Risco</div>
+                                <div class="pdf-stat-value" style="color: #ff9800;">${mediumRisk}</div>
+                            </div>
+                            <div class="pdf-stat">
+                                <div class="pdf-stat-label">Alto Risco</div>
+                                <div class="pdf-stat-value" style="color: #f44336;">${highRisk}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pdf-section">
+                        <div class="pdf-section-title">Análise por Modalidade</div>
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Modalidade</th>
+                                    <th>Sessões</th>
+                                    <th>Volume</th>
+                                    <th>Carga</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(modalityBreakdown).map(([mod, data]) => `
+                                    <tr>
+                                        <td>${MODALITIES[mod]?.icon} ${mod}</td>
+                                        <td>${data.sessions}</td>
+                                        <td>${data.volume}</td>
+                                        <td>${data.carga}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pdf-section">
+                        <div class="pdf-section-title">Detalhamento de Sessões</div>
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Modalidade</th>
+                                    <th>Tipo</th>
+                                    <th>Volume</th>
+                                    <th>RPE</th>
+                                    <th>Carga</th>
+                                    <th>Risco</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sessions.map(s => `
+                                    <tr>
+                                        <td>${new Date(s.date).toLocaleDateString('pt-BR')}</td>
+                                        <td>${MODALITIES[s.modality]?.icon} ${s.modality}</td>
+                                        <td>${s.type}</td>
+                                        <td>${s.volume} ${s.unit}</td>
+                                        <td>${s.rpe}/10</td>
+                                        <td>${(s.volume * s.rpe / 10).toFixed(1)}</td>
+                                        <td>${s.risk === 'low' ? 'Baixo' : s.risk === 'medium' ? 'Médio' : 'Alto'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pdf-footer">
+                        <div class="pdf-logo">Paulo Meira - Performance & Prevenção de Lesões</div>
+                        <p>Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncWithControlSite() {
+            updateSyncStatus('🔄 Sincronizando...');
+
+            // Tenta sincronizar com localStorage
+            setTimeout(() => {
+                syncWithLocalStorage();
+                updateReportPreview();
+                updateSyncStatus('✓ Sincronizado com site de controle');
+            }, 1000);
+        }
+
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'reportClientSelect' || e.target.id === 'reportStartDate' || e.target.id === 'reportEndDate') {
+                updateReportPreview();
+            }
+        });
+
+        // ============================================
+        // MODALS
+        // ============================================
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        window.onclick = (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        };
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        loadData();
+        checkWeekReset();
+        updateTime();
+        setInterval(updateTime, 10000);
+        setInterval(checkSync, 60000);
+        renderDashboard();
+        checkSync();
+    </script>
+</body>
+</html>
