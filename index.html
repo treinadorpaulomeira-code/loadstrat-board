@@ -644,6 +644,82 @@
             font-size: 0.83rem; color: var(--text-secondary);
         }
 
+        .week-exceptions {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+            padding: 11px 15px;
+            background: rgba(122, 145, 185, 0.1);
+            border: 1px solid rgba(122, 145, 185, 0.3);
+            border-radius: 10px;
+            font-size: 0.83rem; color: var(--text-secondary);
+        }
+        .week-exceptions strong { color: #a8bcd9; }
+
+        .planner-slot.extra { border-left-style: dashed; }
+
+        .badge-extra {
+            display: inline-block; margin-left: 4px; padding: 1px 6px;
+            font-size: 0.62rem; font-weight: 600; letter-spacing: 0.4px;
+            text-transform: uppercase; color: #a8bcd9;
+            background: rgba(122, 145, 185, 0.2);
+            border-radius: 4px; vertical-align: middle;
+        }
+
+        /* ============ VISÃO MENSAL ============ */
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .month-head {
+            padding: 8px 4px; text-align: center;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.8px;
+            text-transform: uppercase; color: var(--primary);
+        }
+
+        .month-cell {
+            min-height: 96px; padding: 7px 7px 5px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .month-cell.fora { opacity: 0.32; }
+        .month-cell.hoje { border-color: rgba(212, 175, 55, 0.6); background: rgba(212,175,55,0.05); }
+
+        .month-daynum {
+            font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 5px; font-variant-numeric: tabular-nums;
+        }
+        .month-cell.hoje .month-daynum { color: var(--primary); }
+
+        .month-item {
+            display: block; margin-bottom: 3px; padding: 2px 5px;
+            font-size: 0.68rem; line-height: 1.35;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            border-radius: 3px; border-left: 2px solid transparent;
+        }
+        .month-item.cliente {
+            background: rgba(212, 175, 55, 0.11);
+            border-left-color: var(--primary); color: var(--text-secondary);
+        }
+        .month-item.compromisso {
+            background: rgba(122, 145, 185, 0.14);
+            border-left-color: #7a91b9; color: #b9c7dd;
+        }
+        .month-item.extra { border-left-style: dashed; }
+        .month-item-time { font-weight: 600; margin-right: 3px; font-variant-numeric: tabular-nums; }
+        .month-item.cliente .month-item-time { color: var(--primary); }
+        .month-item.compromisso .month-item-time { color: #a8bcd9; }
+
+        .month-more { font-size: 0.66rem; color: var(--text-muted); padding-left: 4px; }
+
+        @media (max-width: 820px) {
+            .month-cell { min-height: 70px; }
+            .month-item { font-size: 0.6rem; }
+        }
+
         /* ============ SELETOR DE DIAS ============ */
         .day-picker { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -700,9 +776,15 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         }
         .planner-day-name {
+            display: flex; flex-direction: column; gap: 2px;
             font-size: 0.82rem; font-weight: 600; color: var(--primary);
             text-transform: uppercase; letter-spacing: 0.6px;
         }
+        .planner-day-date {
+            font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;
+            color: var(--text-muted); text-transform: none;
+        }
+        .planner-day.today .planner-day-date { color: var(--primary); }
         .planner-add {
             width: 24px; height: 24px; padding: 0; line-height: 1;
             font-size: 1rem; color: var(--text-muted);
@@ -1595,7 +1677,7 @@
                 <!-- PLANNER TAB -->
                 <div id="planner" class="tab-content">
                     <div class="card grid-full">
-                        <div class="card-title">📅 Agenda Semanal</div>
+                        <div class="card-title" id="plannerCardTitle">📅 Agenda Semanal</div>
                         <div id="plannerContent">Carregando planner...</div>
                     </div>
                 </div>
@@ -1881,6 +1963,14 @@
                 <label>Observação <span style="color: var(--text-muted); font-weight: 400;">— opcional</span></label>
                 <input type="text" id="commitmentNote" placeholder="Ex: sala 204">
             </div>
+
+            <div class="form-group">
+                <label>Vale para</label>
+                <select id="commitmentScope">
+                    <option value="fixo">Toda semana — entra na agenda fixa</option>
+                    <option value="semana">Só esta semana — compromisso pontual</option>
+                </select>
+            </div>
             <div class="modal-footer">
                 <span id="commitmentHint" class="save-hint"></span>
                 <button class="btn-secondary" onclick="closeModal('commitmentModal')">Cancelar</button>
@@ -1939,6 +2029,14 @@
                     <button type="button" onclick="applyDayPreset(['sabado','domingo'])">Fim de semana</button>
                     <button type="button" onclick="applyDayPreset([])">Limpar</button>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Vale para</label>
+                <select id="plannerAddScope">
+                    <option value="fixo">Toda semana — entra na agenda fixa</option>
+                    <option value="semana">Só esta semana — encaixe pontual</option>
+                </select>
             </div>
             <div class="modal-footer">
                 <span id="plannerAddHint" class="save-hint"></span>
@@ -2336,8 +2434,8 @@
             if (stored) {
                 data = JSON.parse(stored);
             }
-            const m1 = migrateSchedules(), m2 = migrateModalities(), m3 = ensureCommitments();
-            if (m1 || m2 || m3) saveData();
+            const m1 = migrateSchedules(), m2 = migrateModalities(), m3 = ensureCommitments(), m4 = ensureExceptions();
+            if (m1 || m2 || m3 || m4) saveData();
         }
 
         // ============================================
@@ -2581,12 +2679,15 @@
             return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
+        // Virou a semana? As exceções da semana anterior caem e a agenda fixa volta.
         function checkWeekReset() {
-            const currentWeek = getWeekNumber(new Date());
-            if (currentWeek !== data.lastWeekNumber) {
-                data.lastWeekNumber = currentWeek;
-                data.weeklySchedule = [];
+            const semana = currentWeekId();
+            if (data.lastWeekId !== semana) {
+                data.lastWeekId = semana;
+                data.exceptions = [];
                 saveData();
+                if (typeof renderPlanner === 'function') renderPlanner();
+                if (typeof renderDashboard === 'function') renderDashboard();
             }
         }
 
@@ -2739,6 +2840,60 @@
             return changed;
         }
 
+        // ============================================
+        // EXCEÇÕES DA SEMANA
+        // A agenda fixa (schedule[] e commitments[]) é o padrão e nunca muda sozinha.
+        // Alterações pontuais viram exceções carimbadas com a semana ISO em que valem,
+        // e somem sozinhas quando a semana vira.
+        // ============================================
+        function currentWeekId() {
+            const k = weekKey(startOfDay(new Date()).toISOString().slice(0, 10));
+            return k ? k.toISOString().slice(0, 10) : '';
+        }
+
+        function ensureExceptions() {
+            let changed = false;
+            if (!Array.isArray(data.exceptions)) { data.exceptions = []; changed = true; }
+            const semana = currentWeekId();
+            const antes = data.exceptions.length;
+            // Descarta o que era de semanas passadas — é isso que faz a agenda voltar ao normal
+            data.exceptions = data.exceptions.filter(e => e.week === semana);
+            if (data.exceptions.length !== antes) changed = true;
+            return changed;
+        }
+
+        function exceptionsThisWeek() {
+            ensureExceptions();
+            return data.exceptions;
+        }
+
+        function isCancelled(kind, refId, day, time) {
+            return exceptionsThisWeek().some(e =>
+                e.type === 'cancel' && e.kind === kind && e.refId === refId &&
+                e.day === day && e.time === time);
+        }
+
+        function addException(ex) {
+            ensureExceptions();
+            data.exceptions.push({ ...ex, week: currentWeekId(), id: 'ex_' + Date.now() + Math.random().toString(36).slice(2, 6) });
+            saveData();
+        }
+
+        function removeException(id) {
+            ensureExceptions();
+            data.exceptions = data.exceptions.filter(e => e.id !== id);
+            saveData();
+        }
+
+        function clearWeekExceptions() {
+            if (!exceptionsThisWeek().length) return;
+            if (!confirm('Desfazer todas as alterações desta semana e voltar à agenda fixa?')) return;
+            data.exceptions = [];
+            saveData();
+            renderPlanner();
+            renderDashboard();
+        }
+
         // ---- Compromissos pessoais do treinador (não são atendimentos) ----
         function ensureCommitments() {
             if (!Array.isArray(data.commitments)) { data.commitments = []; return true; }
@@ -2781,12 +2936,32 @@
             return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
         }
 
-        // Atendimentos + compromissos pessoais, na ordem do relógio
+        // Agenda REAL do dia = fixa − cancelamentos da semana + extras da semana
         function agendaOfDay(day) {
-            const out = appointmentsOfDay(day).slice();
-            (data.commitments || []).forEach(cm => {
-                if (cm.day === day) out.push({ kind: 'compromisso', commitment: cm, time: cm.time });
+            const out = [];
+
+            appointmentsOfDay(day).forEach(a => {
+                if (isCancelled('cliente', a.client.id, day, a.time)) return;
+                out.push({ ...a, fixo: true });
             });
+
+            (data.commitments || []).forEach(cm => {
+                if (cm.day !== day) return;
+                if (isCancelled('compromisso', cm.id, day, cm.time)) return;
+                out.push({ kind: 'compromisso', commitment: cm, time: cm.time, fixo: true });
+            });
+
+            exceptionsThisWeek().forEach(e => {
+                if (e.type !== 'extra' || e.day !== day) return;
+                if (e.kind === 'cliente') {
+                    const c = (data.clients || []).find(x => x.id === e.refId);
+                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id });
+                } else {
+                    out.push({ kind: 'compromisso', commitment: { id: e.refId, title: e.title, time: e.time, note: e.note || '' },
+                               time: e.time, fixo: false, exId: e.id });
+                }
+            });
+
             return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
         }
 
@@ -4036,25 +4211,160 @@
         // PLANNER
         // ============================================
 
+        // ============================================
+        // VISÃO MENSAL
+        // Projeta a agenda fixa sobre o calendário; exceções só valem na semana corrente.
+        // ============================================
+        let plannerView = 'semana';
+        let monthCursor = null;   // primeiro dia do mês exibido
+
+        function monthStart(d) {
+            const x = new Date(d);
+            x.setDate(1); x.setHours(0, 0, 0, 0);
+            return x;
+        }
+
+        function ensureMonthCursor() {
+            if (!monthCursor) monthCursor = monthStart(new Date());
+            return monthCursor;
+        }
+
+        function shiftMonth(delta) {
+            ensureMonthCursor();
+            monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + delta, 1);
+            renderPlanner();
+        }
+
+        function goToday() {
+            monthCursor = monthStart(new Date());
+            renderPlanner();
+        }
+
+        function setPlannerView(v) {
+            plannerView = v;
+            renderPlanner();
+        }
+
+        // Agenda de uma data concreta
+        function agendaOfDate(dateObj) {
+            const day = DAY_ORDER[(dateObj.getDay() + 6) % 7];
+            const iso = dateObj.toISOString().slice(0, 10);
+            const semanaDaData = weekKey(iso)?.toISOString().slice(0, 10);
+            const ehSemanaCorrente = semanaDaData === currentWeekId();
+            // Fora da semana corrente as exceções não existem: vale a agenda fixa
+            return ehSemanaCorrente ? agendaOfDay(day) : (() => {
+                const out = appointmentsOfDay(day).map(a => ({ ...a, fixo: true }));
+                (data.commitments || []).forEach(cm => {
+                    if (cm.day === day) out.push({ kind: 'compromisso', commitment: cm, time: cm.time, fixo: true });
+                });
+                return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+            })();
+        }
+
+        function renderPlannerMonth(container) {
+            const cur = ensureMonthCursor();
+            const ano = cur.getFullYear(), mes = cur.getMonth();
+            const hojeIso = startOfDay(new Date()).toISOString().slice(0, 10);
+
+            const primeiro = new Date(ano, mes, 1);
+            const offset = (primeiro.getDay() + 6) % 7;             // 0 = segunda
+            const inicio = new Date(ano, mes, 1 - offset);
+            const celulas = [];
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(inicio); d.setDate(inicio.getDate() + i);
+                celulas.push(d);
+                if (i >= 34 && d.getMonth() !== mes) break;
+            }
+
+            const nm = cur.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            const nomeMes = nm.charAt(0).toUpperCase() + nm.slice(1);
+            const totalMes = celulas.filter(d => d.getMonth() === mes)
+                .reduce((n, d) => n + agendaOfDate(d).length, 0);
+
+            container.innerHTML = `
+                <div class="planner-bar">
+                    <div class="planner-count">
+                        <strong style="color: var(--text-primary);">${nomeMes}</strong>
+                        <span style="margin-left: 12px;">${totalMes} compromisso(s) no mês</span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="chart-toggle" onclick="setPlannerView('semana')">📅 Ver semana</button>
+                        <button class="chart-toggle" onclick="shiftMonth(-1)">‹</button>
+                        <button class="chart-toggle" onclick="goToday()">Hoje</button>
+                        <button class="chart-toggle" onclick="shiftMonth(1)">›</button>
+                    </div>
+                </div>
+
+                <div class="month-grid">
+                    ${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => `<div class="month-head">${d}</div>`).join('')}
+                    ${celulas.map(d => {
+                        const iso = d.toISOString().slice(0, 10);
+                        const foraDoMes = d.getMonth() !== mes;
+                        const ehHoje = iso === hojeIso;
+                        const evs = foraDoMes ? [] : agendaOfDate(d);
+                        const mostra = evs.slice(0, 3);
+                        const resto = evs.length - mostra.length;
+                        return `
+                            <div class="month-cell ${foraDoMes ? 'fora' : ''} ${ehHoje ? 'hoje' : ''}">
+                                <div class="month-daynum">${d.getDate()}</div>
+                                ${mostra.map(e => `
+                                    <div class="month-item ${e.kind}${e.fixo ? '' : ' extra'}"
+                                         title="${e.time} — ${e.kind === 'cliente' ? e.client.name : e.commitment.title}">
+                                        <span class="month-item-time">${e.time}</span>
+                                        ${e.kind === 'cliente' ? e.client.name : e.commitment.title}
+                                    </div>`).join('')}
+                                ${resto > 0 ? `<div class="month-more">+${resto}</div>` : ''}
+                            </div>`;
+                    }).join('')}
+                </div>`;
+        }
+
         function renderPlanner() {
             const container = document.getElementById('plannerContent');
             if (!container) return;
+            checkWeekReset();
+            const tt = document.getElementById('plannerCardTitle');
+            if (tt) tt.textContent = plannerView === 'mes' ? '🗓️ Agenda Mensal' : '📅 Agenda Semanal';
+            if (plannerView === 'mes') return renderPlannerMonth(container);
 
             const hoje = DAY_ORDER[(new Date().getDay() + 6) % 7];
-            const nAtend = DAY_ORDER.reduce((n, d) => n + appointmentsOfDay(d).length, 0);
-            const nComp = (data.commitments || []).length;
+            const segunda = new Date(currentWeekId() + 'T00:00:00');
+            const dataDoDia = {};
+            DAY_ORDER.forEach((d, i) => {
+                const x = new Date(segunda); x.setDate(x.getDate() + i);
+                dataDoDia[d] = x.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            });
+            const nAtend = DAY_ORDER.reduce((n, d) => n + agendaOfDay(d).filter(e => e.kind === 'cliente').length, 0);
+            const nComp = DAY_ORDER.reduce((n, d) => n + agendaOfDay(d).filter(e => e.kind === 'compromisso').length, 0);
+            const exs = exceptionsThisWeek();
+
+            const ini = new Date(currentWeekId() + 'T00:00:00');
+            const fim = new Date(ini); fim.setDate(fim.getDate() + 6);
+            const fmt = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
             container.innerHTML = `
                 <div class="planner-bar">
                     <div class="planner-count">
                         <span class="legend-dot cliente"></span> ${nAtend} atendimento(s)
                         <span class="legend-dot compromisso" style="margin-left:14px;"></span> ${nComp} compromisso(s)
+                        <span style="margin-left:14px; color: var(--text-muted);">semana de ${fmt(ini)} a ${fmt(fim)}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="chart-toggle" onclick="setPlannerView('mes')">🗓️ Ver mês</button>
                         <button class="chart-toggle" onclick="openCommitmentAdd('')">📌 Novo compromisso</button>
                         <button class="chart-toggle" onclick="openPlannerAdd('')">➕ Novo atendimento</button>
                     </div>
                 </div>
+
+                ${exs.length ? `
+                    <div class="week-exceptions">
+                        <div>
+                            <strong>${exs.length} alteração(ões) só nesta semana.</strong>
+                            A agenda fixa volta sozinha na segunda-feira.
+                        </div>
+                        <button class="chart-toggle" onclick="clearWeekExceptions()">↺ Desfazer alterações</button>
+                    </div>` : ''}
+
                 <div class="planner-grid">
                     ${DAY_ORDER.map(day => {
                         const evs = agendaOfDay(day);
@@ -4065,7 +4375,10 @@
                         return `
                             <div class="planner-day ${day === hoje ? 'today' : ''}">
                                 <div class="planner-day-head">
-                                    <span class="planner-day-name">${DAYS[day]}${day === hoje ? ' · hoje' : ''}</span>
+                                    <span class="planner-day-name">
+                                        ${DAYS[day]}
+                                        <span class="planner-day-date">${dataDoDia[day]}${day === hoje ? ' · hoje' : ''}</span>
+                                    </span>
                                     <span class="planner-day-btns">
                                         <button class="planner-add" title="Compromisso neste dia"
                                                 onclick="openCommitmentAdd('${day}')">📌</button>
@@ -4078,33 +4391,56 @@
                                     : porTurno.map(g => `
                                         <div class="shift-block shift-${g.sh.key}">
                                             <div class="shift-label">${g.sh.label}</div>
-                                            ${g.itens.map(e => e.kind === 'cliente' ? `
-                                                <div class="planner-slot cliente">
+                                            ${g.itens.map(e => {
+                                                const nome = e.kind === 'cliente' ? e.client.name : e.commitment.title;
+                                                const refId = e.kind === 'cliente' ? e.client.id : e.commitment.id;
+                                                const icones = e.kind === 'cliente'
+                                                    ? (e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')
+                                                    : '📌';
+                                                return `
+                                                <div class="planner-slot ${e.kind}${e.fixo ? '' : ' extra'}">
                                                     <div class="planner-slot-top">
                                                         <span class="planner-slot-time">${e.time}</span>
-                                                        <span class="planner-slot-mods">${(e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')}</span>
+                                                        <span class="planner-slot-mods">${icones}${e.fixo ? '' : ' <span class="badge-extra">só esta semana</span>'}</span>
                                                         <span class="planner-slot-actions">
-                                                            <button title="Editar cliente" onclick="openClientDetails('${e.client.id}')">✎</button>
-                                                            <button title="Remover deste horário" onclick="removeAppointment('${e.client.id}', '${day}', '${e.time}')">✕</button>
+                                                            ${e.fixo ? `
+                                                                <button title="Cancelar só nesta semana"
+                                                                        onclick="cancelThisWeek('${e.kind}', '${refId}', '${day}', '${e.time}')">⊘</button>
+                                                                <button title="Editar a agenda fixa"
+                                                                        onclick="${e.kind === 'cliente' ? `openClientDetails('${refId}')` : `openCommitmentEdit('${refId}')`}">✎</button>
+                                                                <button title="Remover da agenda fixa"
+                                                                        onclick="${e.kind === 'cliente' ? `removeAppointment('${refId}', '${day}', '${e.time}')` : `removeCommitment('${refId}')`}">✕</button>
+                                                            ` : `
+                                                                <button title="Remover este extra"
+                                                                        onclick="removeExtra('${e.exId}')">✕</button>
+                                                            `}
                                                         </span>
                                                     </div>
-                                                    <div class="planner-slot-name">${e.client.name}</div>
-                                                </div>` : `
-                                                <div class="planner-slot compromisso">
-                                                    <div class="planner-slot-top">
-                                                        <span class="planner-slot-time">${e.time}</span>
-                                                        <span class="planner-slot-mods">📌</span>
-                                                        <span class="planner-slot-actions">
-                                                            <button title="Editar compromisso" onclick="openCommitmentEdit('${e.commitment.id}')">✎</button>
-                                                            <button title="Remover compromisso" onclick="removeCommitment('${e.commitment.id}')">✕</button>
-                                                        </span>
-                                                    </div>
-                                                    <div class="planner-slot-name">${e.commitment.title}</div>
-                                                </div>`).join('')}
+                                                    <div class="planner-slot-name">${nome}</div>
+                                                </div>`;
+                                            }).join('')}
                                         </div>`).join('')}
                             </div>`;
                     }).join('')}
                 </div>`;
+        }
+
+        // Cancela um item fixo apenas na semana corrente
+        function cancelThisWeek(kind, refId, day, time) {
+            const nome = kind === 'cliente'
+                ? (data.clients.find(c => c.id === refId) || {}).name
+                : (data.commitments.find(c => c.id === refId) || {}).title;
+            if (!confirm(`Cancelar ${nome} de ${DAYS[day]} às ${time} só nesta semana?\n\nNa próxima semana volta ao normal.`)) return;
+            addException({ type: 'cancel', kind, refId, day, time });
+            renderPlanner();
+            renderDashboard();
+        }
+
+        function removeExtra(exId) {
+            if (!confirm('Remover este encaixe desta semana?')) return;
+            removeException(exId);
+            renderPlanner();
+            renderDashboard();
         }
 
         // ---- Compromissos pessoais ----
@@ -4117,6 +4453,8 @@
             document.getElementById('commitmentTime').value = '';
             document.getElementById('commitmentNote').value = '';
             renderDayPicker('commitmentDays', day ? [day] : []);
+            const sc = document.getElementById('commitmentScope');
+            if (sc) sc.value = 'fixo';
             const hint = document.getElementById('commitmentHint');
             hint.textContent = ''; hint.className = 'save-hint';
             document.getElementById('commitmentModal').classList.add('active');
@@ -4131,6 +4469,8 @@
             document.getElementById('commitmentTime').value = cm.time;
             document.getElementById('commitmentNote').value = cm.note || '';
             renderDayPicker('commitmentDays', [cm.day]);
+            const sc = document.getElementById('commitmentScope');
+            if (sc) sc.value = 'fixo';
             const hint = document.getElementById('commitmentHint');
             hint.textContent = ''; hint.className = 'save-hint';
             document.getElementById('commitmentModal').classList.add('active');
@@ -4143,6 +4483,7 @@
             const time = document.getElementById('commitmentTime').value;
             const note = (document.getElementById('commitmentNote').value || '').trim();
             const dias = readDayPicker('commitmentDays');
+            const escopo = (document.getElementById('commitmentScope') || {}).value || 'fixo';
             const hint = document.getElementById('commitmentHint');
 
             if (!title || !time || !dias.length) {
@@ -4151,17 +4492,22 @@
                 return;
             }
 
-            ensureCommitments();
-            if (editingCommitmentId) {
-                data.commitments = data.commitments.filter(x => x.id !== editingCommitmentId);
+            if (escopo === 'semana') {
+                dias.forEach(day => addException({ type: 'extra', kind: 'compromisso',
+                    refId: 'tmp_' + Date.now() + day, day, time, title, note }));
+            } else {
+                ensureCommitments();
+                if (editingCommitmentId) {
+                    data.commitments = data.commitments.filter(x => x.id !== editingCommitmentId);
+                }
+                let base = Date.now();
+                dias.forEach((day, i) => {
+                    if (data.commitments.some(x => x.day === day && x.time === time && x.title === title)) return;
+                    data.commitments.push({ id: 'cm_' + (base + i), title, day, time, note });
+                });
+                saveData();
             }
-            let base = Date.now();
-            dias.forEach((day, i) => {
-                if (data.commitments.some(x => x.day === day && x.time === time && x.title === title)) return;
-                data.commitments.push({ id: 'cm_' + (base + i), title, day, time, note });
-            });
 
-            saveData();
             closeModal('commitmentModal');
             renderPlanner();
             renderDashboard();
@@ -4170,12 +4516,14 @@
         function removeCommitment(id) {
             const cm = (data.commitments || []).find(x => x.id === id);
             if (!cm) return;
-            if (!confirm(`Remover "${cm.title}" de ${DAYS[cm.day]} às ${cm.time}?`)) return;
+            if (!confirm(`Remover "${cm.title}" de ${DAYS[cm.day]} às ${cm.time} da agenda fixa?\n\nIsso vale para todas as semanas.`)) return;
             data.commitments = data.commitments.filter(x => x.id !== id);
             saveData();
             renderPlanner();
             renderDashboard();
         }
+
+
 
         function removeAppointment(clientId, day, time) {
             const c = data.clients.find(x => x.id === clientId);
@@ -4216,6 +4564,8 @@
         function openPlannerAdd(day) {
             if (!data.clients.length) { alert('Cadastre um cliente antes de montar a agenda.'); return; }
             document.getElementById('plannerAddTime').value = '';
+            const sc = document.getElementById('plannerAddScope');
+            if (sc) sc.value = 'fixo';
             renderDayPicker('plannerAddDays', day ? [day] : []);
             const hint = document.getElementById('plannerAddHint');
             hint.textContent = ''; hint.className = 'save-hint';
@@ -4239,8 +4589,17 @@
             }
             const c = data.clients.find(x => x.id === clientId);
             if (!c) return;
-            c.schedule = c.schedule || [];
 
+            const escopo = (document.getElementById('plannerAddScope') || {}).value || 'fixo';
+            if (escopo === 'semana') {
+                dias.forEach(day => addException({ type: 'extra', kind: 'cliente', refId: clientId, day, time }));
+                closeModal('plannerAddModal');
+                renderPlanner();
+                renderDashboard();
+                return;
+            }
+
+            c.schedule = c.schedule || [];
             let novos = 0, repetidos = 0;
             dias.forEach(day => {
                 if (c.schedule.some(x => x.day === day && x.time === time)) { repetidos++; return; }
