@@ -429,7 +429,9 @@
         .modal-footer {
             display: flex;
             gap: 12px;
+            align-items: center;
             justify-content: flex-end;
+            flex-wrap: wrap;
             margin-top: 30px;
         }
 
@@ -554,6 +556,79 @@
             height: 350px;
             margin-top: 12px;
         }
+
+        /* ============ KPI TILES ============ */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi-tile {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-top: 2px solid rgba(212, 175, 55, 0.55);
+            border-radius: 12px;
+            padding: 18px 20px 16px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+        }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: var(--text-muted);
+        }
+
+        .kpi-value {
+            margin-top: 8px;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .kpi-value.status-good     { color: #46a47a; }
+        .kpi-value.status-warning  { color: #d9a441; }
+        .kpi-value.status-critical { color: #e05a52; }
+
+        .kpi-sub {
+            margin-top: 6px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        /* ============ STATUS PILLS ============ */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .status-pill.good     { background: rgba(70, 164, 122, 0.16); color: #6cc79c; border: 1px solid rgba(70,164,122,0.35); }
+        .status-pill.warning  { background: rgba(217, 164, 65, 0.16); color: #e0b45f; border: 1px solid rgba(217,164,65,0.35); }
+        .status-pill.critical { background: rgba(224, 90, 82, 0.16);  color: #ef8079; border: 1px solid rgba(224,90,82,0.38); }
+        .status-pill.neutral  { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); }
+
+        /* ============ SAVE HINT ============ */
+        .save-hint {
+            flex: 1;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            text-align: right;
+            padding-right: 4px;
+            min-height: 18px;
+        }
+
+        .save-hint.pending { color: var(--warning); }
+        .save-hint.saved   { color: var(--success); font-weight: 500; }
+        .save-hint.error   { color: var(--danger); font-weight: 500; }
 
         /* ============ MODALITY CHIPS ============ */
         .modality-picker {
@@ -1242,37 +1317,50 @@
             <div class="content">
                 <!-- DASHBOARD TAB -->
                 <div id="dashboard" class="tab-content active">
-                    <div class="grid-2">
-                        <div class="card">
-                            <div class="card-title">📋 Resumo Hoje</div>
-                            <div class="stats-grid">
-                                <div class="stat-box">
-                                    <div class="stat-label">Clientes</div>
-                                    <div class="stat-value" id="dashTodayClients">0</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-label">Receita</div>
-                                    <div class="stat-value" id="dashTodayRevenue">R$0</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-label">Sessões</div>
-                                    <div class="stat-value" id="dashTodaySessions">0</div>
-                                </div>
-                            </div>
+                    <div class="kpi-row">
+                        <div class="kpi-tile">
+                            <div class="kpi-label">Sessões na semana</div>
+                            <div class="kpi-value" id="kpiWeekSessions">0</div>
+                            <div class="kpi-sub" id="kpiWeekSessionsSub">—</div>
                         </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label">Carga da semana</div>
+                            <div class="kpi-value" id="kpiWeekLoad">0</div>
+                            <div class="kpi-sub">u.a. · volume × RPE</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label">Razão aguda / crônica</div>
+                            <div class="kpi-value" id="kpiACWR">—</div>
+                            <div class="kpi-sub" id="kpiACWRSub">zona ideal 0,8–1,3</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label">Atletas em atenção</div>
+                            <div class="kpi-value" id="kpiAtRisk">0</div>
+                            <div class="kpi-sub" id="kpiAtRiskSub">de 0 atletas ativos</div>
+                        </div>
+                    </div>
 
-                        <div class="card">
-                            <div class="card-title">📊 Semana</div>
-                            <div class="stats-grid">
-                                <div class="stat-box">
-                                    <div class="stat-label">Receita</div>
-                                    <div class="stat-value" id="dashWeekRevenue">R$0</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-label">Média/dia</div>
-                                    <div class="stat-value" id="dashWeekAvg">R$0</div>
-                                </div>
+                    <div class="card grid-full chart-card" style="margin-top: 20px;">
+                        <div class="chart-head">
+                            <div>
+                                <div class="chart-title">Carga da equipe por semana</div>
+                                <div class="chart-subtitle">Soma de volume × RPE de todos os atletas · últimas 8 semanas</div>
                             </div>
+                            <button id="teamLoadViewBtn" class="chart-toggle" onclick="toggleTeamLoadView()">▦ Ver tabela</button>
+                        </div>
+                        <div class="chart-container" id="teamLoadChartWrap" style="height: 260px;">
+                            <canvas id="teamLoadChart"></canvas>
+                        </div>
+                        <div class="chart-table" id="teamLoadTable" style="display:none;"></div>
+                    </div>
+
+                    <div class="grid-2" style="margin-top: 20px;">
+                        <div class="card grid-full">
+                            <div class="flex-between">
+                                <div class="card-title">🎯 Controle de carga por atleta</div>
+                                <span style="font-size: 0.78rem; color: var(--text-muted);">semana atual vs. média das anteriores</span>
+                            </div>
+                            <div id="athleteLoadTable"></div>
                         </div>
 
                         <div class="card grid-full">
@@ -1553,7 +1641,9 @@
 
             <div class="modal-footer">
                 <button class="btn-danger btn-small" id="deleteClientBtn" onclick="deleteSelectedClient()">Deletar</button>
-                <button class="btn-secondary" onclick="closeModal('clientDetailsModal')">Fechar</button>
+                <span id="clientSaveHint" class="save-hint"></span>
+                <button class="btn-secondary" onclick="closeClientDetails()">Fechar</button>
+                <button id="saveClientBtn" onclick="saveClientChanges()">Salvar alterações</button>
             </div>
         </div>
     </div>
@@ -2192,15 +2282,15 @@
             content.innerHTML = `
                 <div class="form-group">
                     <label>Nome</label>
-                    <input type="text" id="editClientName" value="${client.name}">
+                    <input type="text" id="editClientName" value="${client.name}" oninput="markClientDirty()">
                 </div>
                 <div class="form-group">
                     <label>Modalidades</label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <div class="modality-picker">
                         ${['Corrida', 'Musculação', 'Pliometria', 'Potência', 'Resistência'].map(m => `
-                            <label style="display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" value="${m}" class="edit-modality-checkbox" ${client.modalities.includes(m) ? 'checked' : ''}>
-                                ${MODALITIES[m]?.icon} ${m}
+                            <label class="modality-chip">
+                                <input type="checkbox" value="${m}" class="edit-modality-checkbox" ${client.modalities.includes(m) ? 'checked' : ''} onchange="markClientDirty()">
+                                <span class="chip-dot" style="background:${MODALITIES[m]?.color}"></span>${MODALITIES[m]?.icon} ${m}
                             </label>
                         `).join('')}
                     </div>
@@ -2208,8 +2298,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Dia</label>
-                        <select id="editClientDay">
-                            <option value="">-</option>
+                        <select id="editClientDay" onchange="markClientDirty()">
+                            <option value="">Selecione o dia…</option>
                             ${Object.entries(DAYS).map(([key, val]) => `
                                 <option value="${key}" ${client.day === key ? 'selected' : ''}>${val}</option>
                             `).join('')}
@@ -2217,7 +2307,7 @@
                     </div>
                     <div class="form-group">
                         <label>Hora</label>
-                        <input type="time" id="editClientTime" value="${client.time || ''}">
+                        <input type="time" id="editClientTime" value="${client.time || ''}" onchange="markClientDirty()">
                     </div>
                 </div>
 
@@ -2226,8 +2316,66 @@
             `;
 
             renderClientSessions(clientId);
+            clientDirty = false;
+            const hint = document.getElementById('clientSaveHint');
+            if (hint) { hint.textContent = ''; hint.className = 'save-hint'; }
             document.getElementById('detailsTitle').textContent = client.name;
             document.getElementById('clientDetailsModal').classList.add('active');
+        }
+
+        let clientDirty = false;
+
+        function markClientDirty() {
+            clientDirty = true;
+            const hint = document.getElementById('clientSaveHint');
+            if (hint) { hint.textContent = 'Alterações não salvas'; hint.className = 'save-hint pending'; }
+        }
+
+        function saveClientChanges() {
+            const client = data.clients.find(c => c.id === selectedClientId);
+            if (!client) return;
+
+            const name = (document.getElementById('editClientName').value || '').trim();
+            const modalities = Array.from(document.querySelectorAll('#clientDetailsModal .edit-modality-checkbox:checked')).map(cb => cb.value);
+            const day = document.getElementById('editClientDay').value;
+            const time = document.getElementById('editClientTime').value;
+            const hint = document.getElementById('clientSaveHint');
+
+            if (!name) {
+                if (hint) { hint.textContent = 'Informe o nome do cliente'; hint.className = 'save-hint error'; }
+                return;
+            }
+            if (modalities.length === 0) {
+                if (hint) { hint.textContent = 'Selecione ao menos uma modalidade'; hint.className = 'save-hint error'; }
+                return;
+            }
+
+            client.name = name;
+            client.modalities = modalities;
+            client.day = day;
+            client.time = time;
+            client.updatedAt = new Date().toISOString();
+
+            saveData();
+            clientDirty = false;
+
+            document.getElementById('detailsTitle').textContent = client.name;
+            if (hint) {
+                hint.textContent = '✓ Salvo';
+                hint.className = 'save-hint saved';
+                setTimeout(() => { if (hint.textContent === '✓ Salvo') { hint.textContent = ''; hint.className = 'save-hint'; } }, 2500);
+            }
+
+            renderClientsTab();
+            renderPlanner();
+            updateFinanceiroSelects();
+            renderDashboard();
+        }
+
+        function closeClientDetails() {
+            if (clientDirty && !confirm('Você tem alterações não salvas. Fechar mesmo assim?')) return;
+            clientDirty = false;
+            closeModal('clientDetailsModal');
         }
 
         function renderClientSessions(clientId) {
@@ -2873,42 +3021,250 @@
         // DASHBOARD
         // ============================================
 
+        // ---- Núcleo de carga: session-RPE (Foster) ----
+        const TEAM_LOAD_COLOR = '#b08d1e';
+        let teamLoadView = 'chart';
+        let teamLoadCache = null;
+
+        function sessionLoad(s) {
+            return (Number(s.volume) || 0) * (Number(s.rpe) || 0);
+        }
+
+        function loadByWeek(sessions) {
+            const map = {};
+            sessions.forEach(s => {
+                const w = parseInt(getWeekNumber(new Date(s.date)));
+                if (isNaN(w)) return;
+                map[w] = (map[w] || 0) + sessionLoad(s);
+            });
+            return map;
+        }
+
+        // Razão aguda:crônica — semana atual sobre a média das até 4 anteriores
+        function acuteChronic(sessions) {
+            const map = loadByWeek(sessions);
+            const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
+            if (!weeks.length) return { acute: 0, chronic: 0, ratio: null, weeks, map };
+            const loads = weeks.map(w => map[w]);
+            const acute = loads[loads.length - 1];
+            const prior = loads.slice(Math.max(0, loads.length - 5), loads.length - 1);
+            const chronic = prior.length ? prior.reduce((a, b) => a + b, 0) / prior.length : 0;
+            return { acute, chronic, ratio: chronic > 0 ? acute / chronic : null, weeks, map };
+        }
+
+        function acwrStatus(ratio) {
+            if (ratio === null) return { key: 'none', label: 'Sem histórico', icon: '·', cls: 'neutral' };
+            if (ratio > 1.5)   return { key: 'critical', label: 'Pico de carga', icon: '▲', cls: 'critical' };
+            if (ratio > 1.3)   return { key: 'warning',  label: 'Acelerando',    icon: '▲', cls: 'warning' };
+            if (ratio < 0.7)   return { key: 'warning',  label: 'Queda de carga', icon: '▼', cls: 'warning' };
+            return { key: 'good', label: 'Zona ideal', icon: '✓', cls: 'good' };
+        }
+
         function renderDashboard() {
-            const today = getTodayDate();
-            const todayClients = new Set(data.sessions.filter(s => s.date === today).map(s => s.clientId)).size;
-            const todayRevenue = data.transactions.filter(t => t.date === today).reduce((sum, t) => sum + t.amount, 0);
-            const todaySession = data.sessions.filter(s => s.date === today).length;
+            const allSessions = data.sessions || [];
+            const map = loadByWeek(allSessions);
+            const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
+            const currentWeek = weeks.length ? weeks[weeks.length - 1] : null;
 
-            const weekStart = new Date();
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-            const weekTransactions = data.transactions.filter(t => new Date(t.date) >= weekStart);
-            const weekRevenue = weekTransactions.reduce((sum, t) => sum + t.amount, 0);
-            const weekAvg = weekRevenue / 7;
+            // --- KPIs ---
+            const weekSessions = currentWeek === null ? [] :
+                allSessions.filter(s => parseInt(getWeekNumber(new Date(s.date))) === currentWeek);
+            const activeAthletes = new Set(weekSessions.map(s => s.clientId)).size;
 
-            document.getElementById('dashTodayClients').textContent = todayClients;
-            document.getElementById('dashTodayRevenue').textContent = 'R$ ' + todayRevenue.toFixed(2);
-            document.getElementById('dashTodaySessions').textContent = todaySession;
-            document.getElementById('dashWeekRevenue').textContent = 'R$ ' + weekRevenue.toFixed(2);
-            document.getElementById('dashWeekAvg').textContent = 'R$ ' + weekAvg.toFixed(2);
+            document.getElementById('kpiWeekSessions').textContent = weekSessions.length;
+            document.getElementById('kpiWeekSessionsSub').textContent =
+                currentWeek === null ? 'nenhuma sessão registrada'
+                    : `${activeAthletes} atleta(s) · semana ${currentWeek}`;
 
-            const upcoming = data.clients
+            const weekLoad = currentWeek === null ? 0 : map[currentWeek];
+            document.getElementById('kpiWeekLoad').textContent = Math.round(weekLoad).toLocaleString('pt-BR');
+
+            const team = acuteChronic(allSessions);
+            const st = acwrStatus(team.ratio);
+            const acwrEl = document.getElementById('kpiACWR');
+            acwrEl.textContent = team.ratio === null ? '—' : team.ratio.toFixed(2).replace('.', ',');
+            acwrEl.className = 'kpi-value status-' + st.cls;
+            document.getElementById('kpiACWRSub').textContent =
+                team.ratio === null ? 'precisa de 2+ semanas' : `${st.icon} ${st.label} · ideal 0,8–1,3`;
+
+            // --- Por atleta ---
+            const perAthlete = (data.clients || []).map(c => {
+                const ss = allSessions.filter(s => s.clientId === c.id);
+                const a = acuteChronic(ss);
+                return { client: c, ...a, status: acwrStatus(a.ratio), sessions: ss.length };
+            }).filter(a => a.sessions > 0);
+
+            const atRisk = perAthlete.filter(a => a.status.cls === 'critical' || a.status.cls === 'warning').length;
+            document.getElementById('kpiAtRisk').textContent = atRisk;
+            document.getElementById('kpiAtRisk').className = 'kpi-value' + (atRisk > 0 ? ' status-warning' : '');
+            document.getElementById('kpiAtRiskSub').textContent = `de ${perAthlete.length} atleta(s) com treinos`;
+
+            renderTeamLoadChart(weeks, map);
+            renderAthleteLoadTable(perAthlete);
+
+            // --- Próximos atendimentos ---
+            const upcoming = (data.clients || [])
                 .filter(c => c.day && c.time)
                 .map(c => ({ ...c, dayNum: Object.keys(DAYS).indexOf(c.day) }))
-                .sort((a, b) => a.dayNum - b.dayNum)
-                .slice(0, 5);
+                .sort((a, b) => a.dayNum - b.dayNum || String(a.time).localeCompare(String(b.time)))
+                .slice(0, 6);
 
-            const appointmentsHtml = upcoming.length === 0
-                ? '<div style="color: var(--text-muted);">Nenhum agendamento</div>'
+            document.getElementById('nextAppointments').innerHTML = upcoming.length === 0
+                ? '<div style="color: var(--text-muted);">Nenhum agendamento — defina dia e hora em Clientes.</div>'
                 : upcoming.map(c => `
                     <div class="list-item">
                         <div class="list-item-content">
                             <div class="list-item-title">${c.name}</div>
-                            <div class="list-item-subtitle">${DAYS[c.day]} às ${c.time}</div>
+                            <div class="list-item-subtitle">${(c.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${DAYS[c.day]} às ${c.time}</div>
                         </div>
                     </div>
                 `).join('');
+        }
 
-            document.getElementById('nextAppointments').innerHTML = appointmentsHtml;
+        function renderAthleteLoadTable(perAthlete) {
+            const el = document.getElementById('athleteLoadTable');
+            if (!el) return;
+            if (!perAthlete.length) {
+                el.innerHTML = '<div style="color: var(--text-muted); padding: 24px 0;">Nenhuma sessão registrada ainda. Registre treinos em Periodização.</div>';
+                return;
+            }
+            const order = { critical: 0, warning: 1, good: 2, neutral: 3 };
+            const rows = [...perAthlete].sort((a, b) =>
+                (order[a.status.cls] - order[b.status.cls]) || (b.acute - a.acute));
+
+            el.innerHTML = `
+                <div class="chart-table" style="margin-top: 12px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Atleta</th>
+                                <th style="text-align:right">Carga semana</th>
+                                <th style="text-align:right">Média anterior</th>
+                                <th style="text-align:right">Razão A:C</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map(a => `
+                                <tr>
+                                    <td>${a.client.name}</td>
+                                    <td style="text-align:right"><strong>${Math.round(a.acute).toLocaleString('pt-BR')}</strong></td>
+                                    <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}</td>
+                                    <td style="text-align:right">${a.ratio === null ? '—' : a.ratio.toFixed(2).replace('.', ',')}</td>
+                                    <td><span class="status-pill ${a.status.cls}">${a.status.icon} ${a.status.label}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        }
+
+        function renderTeamLoadChart(weeks, map) {
+            const canvas = document.getElementById('teamLoadChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const last = weeks.slice(-8);
+            const values = last.map(w => Math.round(map[w]));
+            teamLoadCache = { weeks: last, values };
+            renderTeamLoadTable(last, values);
+
+            const peak = values.length ? values.indexOf(Math.max(...values)) : -1;
+
+            if (charts.teamLoad) charts.teamLoad.destroy();
+            charts.teamLoad = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: last.map(w => `S${w}`),
+                    datasets: [{
+                        label: 'Carga',
+                        data: values,
+                        backgroundColor: TEAM_LOAD_COLOR,
+                        hoverBackgroundColor: '#c9a12a',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 26 } },
+                    interaction: { mode: 'index', intersect: false },
+                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    scales: {
+                        x: {
+                            border: { color: 'rgba(255,255,255,0.14)' },
+                            grid: { display: false },
+                            ticks: { color: CHART_INK.secondary, font: { size: 12 }, padding: 8 }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: { color: CHART_INK.grid, drawTicks: false },
+                            ticks: {
+                                color: CHART_INK.muted, font: { size: 11 }, padding: 10, maxTicksLimit: 5,
+                                callback: v => v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '') + 'k' : v
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(12,12,12,0.96)',
+                            borderColor: 'rgba(212,175,55,0.35)',
+                            borderWidth: 1,
+                            titleColor: CHART_INK.primary,
+                            bodyColor: CHART_INK.secondary,
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: items => `Semana ${items[0].label.replace('S', '')}`,
+                                label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} u.a.`
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'teamPeak',
+                    afterDatasetsDraw(chart) {
+                        if (peak < 0) return;
+                        const { ctx, scales } = chart;
+                        ctx.save();
+                        ctx.font = "600 12px 'Segoe UI', Roboto, sans-serif";
+                        ctx.fillStyle = CHART_INK.primary;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(values[peak].toLocaleString('pt-BR'),
+                            scales.x.getPixelForValue(peak), scales.y.getPixelForValue(values[peak]) - 8);
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        function renderTeamLoadTable(weeks, values) {
+            const el = document.getElementById('teamLoadTable');
+            if (!el) return;
+            el.innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Semana</th><th style="text-align:right">Carga (u.a.)</th></tr></thead>
+                    <tbody>
+                        ${weeks.map((w, i) => `<tr><td>S${w}</td><td style="text-align:right"><strong>${values[i].toLocaleString('pt-BR')}</strong></td></tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function toggleTeamLoadView() {
+            teamLoadView = teamLoadView === 'chart' ? 'table' : 'chart';
+            const isChart = teamLoadView === 'chart';
+            const wrap = document.getElementById('teamLoadChartWrap');
+            const table = document.getElementById('teamLoadTable');
+            const btn = document.getElementById('teamLoadViewBtn');
+            if (wrap) wrap.style.display = isChart ? '' : 'none';
+            if (table) table.style.display = isChart ? 'none' : 'block';
+            if (btn) btn.textContent = isChart ? '▦ Ver tabela' : '📊 Ver gráfico';
         }
 
         // ============================================
