@@ -3166,19 +3166,29 @@
             const chronicTo = acuteFrom - DAY_MS;
             const chronicFrom = chronicTo - 27 * DAY_MS;             // 28 dias anteriores
 
+            const list = (sessions || []).filter(s => !isNaN(startOfDay(new Date(s.date + 'T00:00:00')).getTime()));
             let acute = 0, chronicTotal = 0;
-            (sessions || []).forEach(s => {
+            list.forEach(s => {
                 const t = startOfDay(new Date(s.date + 'T00:00:00')).getTime();
-                if (isNaN(t)) return;
                 const load = sessionLoad(s);
                 if (t >= acuteFrom && t <= today.getTime()) acute += load;
                 else if (t >= chronicFrom && t <= chronicTo) chronicTotal += load;
             });
 
-            const chronic = chronicTotal / 4;                        // média por semana
+            // A base crônica é dividida pelas semanas de histórico REALMENTE disponíveis,
+            // não sempre por 4. Um atleta que começou há 10 dias não tem 4 semanas de base —
+            // dividir por 4 rebaixaria a média e inflaria a razão artificialmente.
+            let baseWeeks = 4;
+            if (list.length) {
+                const first = Math.min(...list.map(s => startOfDay(new Date(s.date + 'T00:00:00')).getTime()));
+                const cobertura = (chronicTo - Math.max(chronicFrom, first)) / (7 * DAY_MS);
+                baseWeeks = Math.max(1, Math.min(4, Math.round(cobertura * 10) / 10));
+            }
+
+            const chronic = chronicTotal / baseWeeks;                // média por semana de histórico
             const map = loadByWeek(sessions);
             const weeks = Object.keys(map).map(Number).sort((a, b) => a - b);
-            return { acute, chronic, ratio: chronic > 0 ? acute / chronic : null, weeks, map };
+            return { acute, chronic, baseWeeks, ratio: chronic > 0 ? acute / chronic : null, weeks, map };
         }
 
         function acwrStatus(ratio) {
@@ -3294,7 +3304,7 @@
                                 <tr>
                                     <td>${a.client.name}</td>
                                     <td style="text-align:right"><strong>${Math.round(a.acute).toLocaleString('pt-BR')}</strong></td>
-                                    <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}</td>
+                                    <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}<span style="color:var(--text-muted); font-size:0.76rem;">${a.chronic ? ' /' + String(a.baseWeeks).replace('.', ',') + 'sem' : ''}</span></td>
                                     <td style="text-align:right">${a.ratio === null ? '—' : a.ratio.toFixed(2).replace('.', ',')}</td>
                                     <td><span class="status-pill ${a.status.cls}">${a.status.icon} ${a.status.label}</span></td>
                                 </tr>
