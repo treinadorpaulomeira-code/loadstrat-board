@@ -1265,7 +1265,7 @@
                             <input type="text" id="cloudStatus" value="Carregando..." readonly>
                         </div>
 
-                        <button style="width: 100%; margin-top: 8px;" onclick="cloudLogin()">🔐 Entrar com Google</button>
+                        <button id="cfgLoginBtn" style="width: 100%; margin-top: 8px;" onclick="cloudLogin()">🔐 Entrar com Google</button>
                         <button style="width: 100%; margin-top: 10px;" onclick="cloudPushNow()">⬆️ Enviar dados agora</button>
                         <button style="width: 100%; margin-top: 10px;" onclick="cloudPullNow()">⬇️ Baixar dados da nuvem</button>
                         <button style="width: 100%; margin-top: 10px; background: var(--bg-tertiary);" onclick="cloudLogout()">🚪 Sair da conta</button>
@@ -1592,6 +1592,8 @@
                     setLoginStatus('');
                     setLoginBusy(false);
                     showApp();
+                    const cfgBtn = document.getElementById('cfgLoginBtn');
+                    if (cfgBtn) cfgBtn.style.display = 'none';
                     const hdr = document.getElementById('headerUser');
                     if (hdr) hdr.textContent = user.displayName || user.email || '';
                     attachCloudDoc(user.uid);
@@ -1601,6 +1603,8 @@
                     setLoginStatus('');
                     setLoginBusy(false);
                     showLogin();
+                    const cfgBtnOut = document.getElementById('cfgLoginBtn');
+                    if (cfgBtnOut) cfgBtnOut.style.display = '';
                     cloudReady = false;
                     cloudDocRef = null;
                     if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
