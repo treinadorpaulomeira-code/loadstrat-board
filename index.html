@@ -644,6 +644,34 @@
             font-size: 0.83rem; color: var(--text-secondary);
         }
 
+        /* ============ SELETOR DE DIAS ============ */
+        .day-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .day-pill {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 56px; padding: 9px 12px;
+            font-size: 0.82rem; font-weight: 500; color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border); border-radius: 999px;
+            cursor: pointer; user-select: none; transition: all 0.15s ease;
+        }
+        .day-pill:hover { border-color: rgba(212, 175, 55, 0.5); color: var(--text-primary); }
+        .day-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .day-pill:has(input:checked) {
+            background: rgba(212, 175, 55, 0.16);
+            border-color: var(--primary);
+            color: var(--primary); font-weight: 600;
+        }
+
+        .day-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .day-presets button {
+            padding: 5px 11px; font-size: 0.75rem; font-weight: 500;
+            color: var(--text-muted); background: transparent;
+            border: 1px solid var(--border); border-radius: 999px;
+            cursor: pointer; text-transform: none; letter-spacing: 0;
+        }
+        .day-presets button:hover { color: var(--primary); border-color: rgba(212,175,55,0.55); }
+
         /* ============ PLANNER ============ */
         .planner-bar {
             display: flex; align-items: center; justify-content: space-between;
@@ -685,12 +713,47 @@
 
         .planner-empty { font-size: 0.82rem; color: var(--text-muted); padding: 6px 0; }
 
+        /* Blocos de turno — tint muito leve, só para orientar o olho */
+        .shift-block {
+            margin-bottom: 10px; padding: 7px 8px 3px;
+            border-radius: 8px;
+        }
+        .shift-manha { background: rgba(120, 170, 220, 0.055); }
+        .shift-tarde { background: rgba(220, 180, 120, 0.055); }
+        .shift-noite { background: rgba(140, 130, 200, 0.06); }
+
+        .shift-label {
+            font-size: 0.63rem; font-weight: 600; letter-spacing: 1.1px;
+            text-transform: uppercase; color: var(--text-muted);
+            margin-bottom: 6px; padding-left: 2px;
+        }
+        .shift-manha .shift-label { color: #7fa8cc; }
+        .shift-tarde .shift-label { color: #c79f6d; }
+        .shift-noite .shift-label { color: #9a92c9; }
+
         .planner-slot {
-            padding: 9px 11px; margin-bottom: 8px;
-            background: rgba(212, 175, 55, 0.08);
-            border-left: 3px solid var(--primary);
+            padding: 9px 11px; margin-bottom: 6px;
             border-radius: 6px;
         }
+        .planner-slot.cliente {
+            background: rgba(212, 175, 55, 0.09);
+            border-left: 3px solid var(--primary);
+        }
+        /* Compromisso pessoal — cor própria, não compete com os atendimentos */
+        .planner-slot.compromisso {
+            background: rgba(122, 145, 185, 0.12);
+            border-left: 3px solid #7a91b9;
+        }
+        .planner-slot.compromisso .planner-slot-time { color: #a8bcd9; }
+
+        .legend-dot {
+            display: inline-block; width: 9px; height: 9px;
+            border-radius: 2px; vertical-align: middle; margin-right: 5px;
+        }
+        .legend-dot.cliente { background: var(--primary); }
+        .legend-dot.compromisso { background: #7a91b9; }
+
+        .planner-day-btns { display: flex; gap: 5px; }
         .planner-slot-top {
             display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
         }
@@ -714,7 +777,7 @@
         /* ============ EDITOR DE HORÁRIOS ============ */
         .schedule-row {
             display: grid;
-            grid-template-columns: 1fr 130px 38px;
+            grid-template-columns: 1fr 130px 38px 38px;
             gap: 8px; align-items: center; margin-bottom: 8px;
         }
         .schedule-row select, .schedule-row input {
@@ -738,6 +801,13 @@
             border-radius: 6px; cursor: pointer;
         }
         .sched-remove:hover { background: rgba(224, 90, 82, 0.2); }
+
+        .sched-copy {
+            padding: 9px 0; font-size: 0.9rem; color: var(--primary);
+            background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 6px; cursor: pointer;
+        }
+        .sched-copy:hover { background: rgba(212, 175, 55, 0.22); }
         .schedule-empty { font-size: 0.85rem; color: var(--text-muted); padding: 8px 0; }
 
         /* ============ SAVE HINT ============ */
@@ -1782,6 +1852,67 @@
         </div>
     </div>
 
+    <!-- MODAL: COMPROMISSO PESSOAL -->
+    <div id="commitmentModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <div class="modal-title" id="commitmentModalTitle">Novo compromisso</div>
+                <button class="modal-close" onclick="closeModal('commitmentModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>O que é</label>
+                <input type="text" id="commitmentTitle" placeholder="Ex: Faculdade, Reunião, Meu treino">
+            </div>
+            <div class="form-group">
+                <label>Horário</label>
+                <input type="time" id="commitmentTime">
+            </div>
+            <div class="form-group">
+                <label>Dias da semana <span style="color: var(--text-muted); font-weight: 400;">— marque quantos quiser</span></label>
+                <div class="day-picker" id="commitmentDays"></div>
+                <div class="day-presets">
+                    <button type="button" onclick="commitmentPreset(['segunda','quarta','sexta'])">Seg · Qua · Sex</button>
+                    <button type="button" onclick="commitmentPreset(['terca','quinta'])">Ter · Qui</button>
+                    <button type="button" onclick="commitmentPreset(['segunda','terca','quarta','quinta','sexta'])">Dias úteis</button>
+                    <button type="button" onclick="commitmentPreset([])">Limpar</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Observação <span style="color: var(--text-muted); font-weight: 400;">— opcional</span></label>
+                <input type="text" id="commitmentNote" placeholder="Ex: sala 204">
+            </div>
+            <div class="modal-footer">
+                <span id="commitmentHint" class="save-hint"></span>
+                <button class="btn-secondary" onclick="closeModal('commitmentModal')">Cancelar</button>
+                <button onclick="saveCommitment()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REPLICAR HORÁRIO -->
+    <div id="replicateModal" class="modal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <div class="modal-title">Replicar horário</div>
+                <button class="modal-close" onclick="closeModal('replicateModal')">✕</button>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 16px;">
+                Em quais dias o cliente treina às <strong id="replicateTimeLabel" style="color: var(--primary);"></strong>?
+            </p>
+            <div class="day-picker" id="replicateDays"></div>
+            <div class="day-presets">
+                <button type="button" onclick="replicatePreset(['segunda','quarta','sexta'])">Seg · Qua · Sex</button>
+                <button type="button" onclick="replicatePreset(['terca','quinta'])">Ter · Qui</button>
+                <button type="button" onclick="replicatePreset(['segunda','terca','quarta','quinta','sexta'])">Dias úteis</button>
+                <button type="button" onclick="replicatePreset([])">Limpar</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('replicateModal')">Cancelar</button>
+                <button onclick="applyReplicate()">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: NOVO ATENDIMENTO NO PLANNER -->
     <div id="plannerAddModal" class="modal">
         <div class="modal-content">
@@ -1793,23 +1924,20 @@
                 <label>Cliente</label>
                 <select id="plannerAddClient"></select>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Dia</label>
-                    <select id="plannerAddDay">
-                        <option value="">Selecione o dia…</option>
-                        <option value="segunda">Segunda</option>
-                        <option value="terca">Terça</option>
-                        <option value="quarta">Quarta</option>
-                        <option value="quinta">Quinta</option>
-                        <option value="sexta">Sexta</option>
-                        <option value="sabado">Sábado</option>
-                        <option value="domingo">Domingo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Horário</label>
-                    <input type="time" id="plannerAddTime">
+            <div class="form-group">
+                <label>Horário</label>
+                <input type="time" id="plannerAddTime">
+            </div>
+
+            <div class="form-group">
+                <label>Dias da semana <span style="color: var(--text-muted); font-weight: 400;">— marque quantos quiser</span></label>
+                <div class="day-picker" id="plannerAddDays"></div>
+                <div class="day-presets">
+                    <button type="button" onclick="applyDayPreset(['segunda','quarta','sexta'])">Seg · Qua · Sex</button>
+                    <button type="button" onclick="applyDayPreset(['terca','quinta'])">Ter · Qui</button>
+                    <button type="button" onclick="applyDayPreset(['segunda','terca','quarta','quinta','sexta'])">Dias úteis</button>
+                    <button type="button" onclick="applyDayPreset(['sabado','domingo'])">Fim de semana</button>
+                    <button type="button" onclick="applyDayPreset([])">Limpar</button>
                 </div>
             </div>
             <div class="modal-footer">
@@ -2208,8 +2336,8 @@
             if (stored) {
                 data = JSON.parse(stored);
             }
-            const m1 = migrateSchedules(), m2 = migrateModalities();
-            if (m1 || m2) saveData();
+            const m1 = migrateSchedules(), m2 = migrateModalities(), m3 = ensureCommitments();
+            if (m1 || m2 || m3) saveData();
         }
 
         // ============================================
@@ -2611,6 +2739,25 @@
             return changed;
         }
 
+        // ---- Compromissos pessoais do treinador (não são atendimentos) ----
+        function ensureCommitments() {
+            if (!Array.isArray(data.commitments)) { data.commitments = []; return true; }
+            return false;
+        }
+
+        // ---- Turnos: manhã / tarde / noite ----
+        const SHIFTS = [
+            { key: 'manha', label: 'Manhã', from: 0,  to: 11.9999 },
+            { key: 'tarde', label: 'Tarde', from: 12, to: 17.9999 },
+            { key: 'noite', label: 'Noite', from: 18, to: 24 }
+        ];
+
+        function shiftOf(time) {
+            const [h, m] = String(time || '00:00').split(':').map(Number);
+            const dec = (h || 0) + (m || 0) / 60;
+            return (SHIFTS.find(s => dec >= s.from && dec <= s.to) || SHIFTS[0]).key;
+        }
+
         function sortSchedule(list) {
             return (list || []).slice().sort((a, b) =>
                 DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) ||
@@ -2627,9 +2774,18 @@
         function appointmentsOfDay(day) {
             const out = [];
             (data.clients || []).forEach(c => {
-                sortSchedule(c.schedule).forEach((slot, idx) => {
-                    if (slot.day === day) out.push({ client: c, time: slot.time, index: c.schedule.indexOf(slot) });
+                sortSchedule(c.schedule).forEach(slot => {
+                    if (slot.day === day) out.push({ kind: 'cliente', client: c, time: slot.time });
                 });
+            });
+            return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+        }
+
+        // Atendimentos + compromissos pessoais, na ordem do relógio
+        function agendaOfDay(day) {
+            const out = appointmentsOfDay(day).slice();
+            (data.commitments || []).forEach(cm => {
+                if (cm.day === day) out.push({ kind: 'compromisso', commitment: cm, time: cm.time });
             });
             return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
         }
@@ -2689,9 +2845,43 @@
                         ${DAY_ORDER.map(k => `<option value="${k}" ${day === k ? 'selected' : ''}>${DAYS[k]}</option>`).join('')}
                     </select>
                     <input type="time" class="sched-time" value="${time || ''}" onchange="markClientDirty()">
+                    <button type="button" class="sched-copy" title="Replicar este horário em outros dias"
+                            onclick="openReplicate(this)">⧉</button>
                     <button type="button" class="sched-remove" title="Remover"
                             onclick="this.closest('.schedule-row').remove(); markClientDirty();">✕</button>
                 </div>`;
+        }
+
+        // ---- Replicar horário em vários dias ----
+        let replicateTime = '';
+
+        function openReplicate(btn) {
+            const row = btn.closest('.schedule-row');
+            const time = row.querySelector('.sched-time').value;
+            const day = row.querySelector('.sched-day').value;
+            if (!time) { alert('Defina o horário desta linha antes de replicar.'); return; }
+            replicateTime = time;
+            document.getElementById('replicateTimeLabel').textContent = time;
+            const jaTem = readScheduleEditor().filter(x => x.time === time).map(x => x.day);
+            renderDayPicker('replicateDays', jaTem.length ? jaTem : (day ? [day] : []));
+            document.getElementById('replicateModal').classList.add('active');
+        }
+
+        function applyReplicate() {
+            const dias = readDayPicker('replicateDays');
+            if (!dias.length) { alert('Marque ao menos um dia.'); return; }
+
+            // mantém tudo que não é deste horário e recria as linhas dos dias marcados
+            const outros = readScheduleEditor().filter(x => x.time !== replicateTime);
+            const novos = dias.map(d => ({ day: d, time: replicateTime }));
+            renderScheduleEditor(sortSchedule(outros.concat(novos)));
+
+            closeModal('replicateModal');
+            markClientDirty();
+        }
+
+        function replicatePreset(dias) {
+            renderDayPicker('replicateDays', dias);
         }
 
         function renderScheduleEditor(list) {
@@ -3665,7 +3855,7 @@
             const horaAgora = new Date().toTimeString().slice(0, 5);
             const todos = [];
             DAY_ORDER.forEach((day, i) => {
-                appointmentsOfDay(day).forEach(a => {
+                agendaOfDay(day).forEach(a => {
                     let ordem = (i - agoraIdx + 7) % 7;
                     if (ordem === 0 && a.time < horaAgora) ordem = 7;   // já passou hoje
                     todos.push({ ...a, day, ordem });
@@ -3676,15 +3866,20 @@
                 .slice(0, 6);
 
             document.getElementById('nextAppointments').innerHTML = upcoming.length === 0
-                ? '<div style="color: var(--text-muted);">Nenhum atendimento fixo — monte a agenda no Planner.</div>'
-                : upcoming.map(a => `
+                ? '<div style="color: var(--text-muted);">Nada agendado — monte a agenda no Planner.</div>'
+                : upcoming.map(a => a.kind === 'cliente' ? `
                     <div class="list-item" style="cursor:pointer;" onclick="openClientDetails('${a.client.id}')">
                         <div class="list-item-content">
-                            <div class="list-item-title">${a.client.name}</div>
+                            <div class="list-item-title"><span class="legend-dot cliente"></span>${a.client.name}</div>
                             <div class="list-item-subtitle">${(a.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}</div>
                         </div>
-                    </div>
-                `).join('');
+                    </div>` : `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title"><span class="legend-dot compromisso"></span>${a.commitment.title}</div>
+                            <div class="list-item-subtitle">📌 ${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}${a.commitment.note ? ' · ' + a.commitment.note : ''}</div>
+                        </div>
+                    </div>`).join('');
         }
 
         function renderAthleteLoadTable(perAthlete) {
@@ -3846,41 +4041,140 @@
             if (!container) return;
 
             const hoje = DAY_ORDER[(new Date().getDay() + 6) % 7];
-            const total = DAY_ORDER.reduce((n, d) => n + appointmentsOfDay(d).length, 0);
+            const nAtend = DAY_ORDER.reduce((n, d) => n + appointmentsOfDay(d).length, 0);
+            const nComp = (data.commitments || []).length;
 
             container.innerHTML = `
                 <div class="planner-bar">
-                    <div class="planner-count">${total} atendimento(s) fixo(s) na semana</div>
-                    <button class="chart-toggle" onclick="openPlannerAdd('')">➕ Novo atendimento</button>
+                    <div class="planner-count">
+                        <span class="legend-dot cliente"></span> ${nAtend} atendimento(s)
+                        <span class="legend-dot compromisso" style="margin-left:14px;"></span> ${nComp} compromisso(s)
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="chart-toggle" onclick="openCommitmentAdd('')">📌 Novo compromisso</button>
+                        <button class="chart-toggle" onclick="openPlannerAdd('')">➕ Novo atendimento</button>
+                    </div>
                 </div>
                 <div class="planner-grid">
                     ${DAY_ORDER.map(day => {
-                        const evs = appointmentsOfDay(day);
+                        const evs = agendaOfDay(day);
+                        const porTurno = SHIFTS.map(sh => ({
+                            sh, itens: evs.filter(e => shiftOf(e.time) === sh.key)
+                        })).filter(g => g.itens.length);
+
                         return `
                             <div class="planner-day ${day === hoje ? 'today' : ''}">
                                 <div class="planner-day-head">
                                     <span class="planner-day-name">${DAYS[day]}${day === hoje ? ' · hoje' : ''}</span>
-                                    <button class="planner-add" title="Adicionar neste dia"
-                                            onclick="openPlannerAdd('${day}')">＋</button>
+                                    <span class="planner-day-btns">
+                                        <button class="planner-add" title="Compromisso neste dia"
+                                                onclick="openCommitmentAdd('${day}')">📌</button>
+                                        <button class="planner-add" title="Atendimento neste dia"
+                                                onclick="openPlannerAdd('${day}')">＋</button>
+                                    </span>
                                 </div>
-                                ${evs.length === 0
+                                ${porTurno.length === 0
                                     ? '<div class="planner-empty">Livre</div>'
-                                    : evs.map(e => `
-                                        <div class="planner-slot">
-                                            <div class="planner-slot-top">
-                                                <span class="planner-slot-time">${e.time}</span>
-                                                <span class="planner-slot-mods">${(e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')}</span>
-                                                <span class="planner-slot-actions">
-                                                    <button title="Editar cliente" onclick="openClientDetails('${e.client.id}')">✎</button>
-                                                    <button title="Remover deste horário" onclick="removeAppointment('${e.client.id}', '${day}', '${e.time}')">✕</button>
-                                                </span>
-                                            </div>
-                                            <div class="planner-slot-name" title="${e.client.name}">${e.client.name}</div>
-                                        </div>
-                                    `).join('')}
+                                    : porTurno.map(g => `
+                                        <div class="shift-block shift-${g.sh.key}">
+                                            <div class="shift-label">${g.sh.label}</div>
+                                            ${g.itens.map(e => e.kind === 'cliente' ? `
+                                                <div class="planner-slot cliente">
+                                                    <div class="planner-slot-top">
+                                                        <span class="planner-slot-time">${e.time}</span>
+                                                        <span class="planner-slot-mods">${(e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')}</span>
+                                                        <span class="planner-slot-actions">
+                                                            <button title="Editar cliente" onclick="openClientDetails('${e.client.id}')">✎</button>
+                                                            <button title="Remover deste horário" onclick="removeAppointment('${e.client.id}', '${day}', '${e.time}')">✕</button>
+                                                        </span>
+                                                    </div>
+                                                    <div class="planner-slot-name">${e.client.name}</div>
+                                                </div>` : `
+                                                <div class="planner-slot compromisso">
+                                                    <div class="planner-slot-top">
+                                                        <span class="planner-slot-time">${e.time}</span>
+                                                        <span class="planner-slot-mods">📌</span>
+                                                        <span class="planner-slot-actions">
+                                                            <button title="Editar compromisso" onclick="openCommitmentEdit('${e.commitment.id}')">✎</button>
+                                                            <button title="Remover compromisso" onclick="removeCommitment('${e.commitment.id}')">✕</button>
+                                                        </span>
+                                                    </div>
+                                                    <div class="planner-slot-name">${e.commitment.title}</div>
+                                                </div>`).join('')}
+                                        </div>`).join('')}
                             </div>`;
                     }).join('')}
                 </div>`;
+        }
+
+        // ---- Compromissos pessoais ----
+        let editingCommitmentId = null;
+
+        function openCommitmentAdd(day) {
+            editingCommitmentId = null;
+            document.getElementById('commitmentModalTitle').textContent = 'Novo compromisso';
+            document.getElementById('commitmentTitle').value = '';
+            document.getElementById('commitmentTime').value = '';
+            document.getElementById('commitmentNote').value = '';
+            renderDayPicker('commitmentDays', day ? [day] : []);
+            const hint = document.getElementById('commitmentHint');
+            hint.textContent = ''; hint.className = 'save-hint';
+            document.getElementById('commitmentModal').classList.add('active');
+        }
+
+        function openCommitmentEdit(id) {
+            const cm = (data.commitments || []).find(x => x.id === id);
+            if (!cm) return;
+            editingCommitmentId = id;
+            document.getElementById('commitmentModalTitle').textContent = 'Editar compromisso';
+            document.getElementById('commitmentTitle').value = cm.title;
+            document.getElementById('commitmentTime').value = cm.time;
+            document.getElementById('commitmentNote').value = cm.note || '';
+            renderDayPicker('commitmentDays', [cm.day]);
+            const hint = document.getElementById('commitmentHint');
+            hint.textContent = ''; hint.className = 'save-hint';
+            document.getElementById('commitmentModal').classList.add('active');
+        }
+
+        function commitmentPreset(dias) { renderDayPicker('commitmentDays', dias); }
+
+        function saveCommitment() {
+            const title = (document.getElementById('commitmentTitle').value || '').trim();
+            const time = document.getElementById('commitmentTime').value;
+            const note = (document.getElementById('commitmentNote').value || '').trim();
+            const dias = readDayPicker('commitmentDays');
+            const hint = document.getElementById('commitmentHint');
+
+            if (!title || !time || !dias.length) {
+                hint.textContent = 'Preencha o nome, o horário e ao menos um dia.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            ensureCommitments();
+            if (editingCommitmentId) {
+                data.commitments = data.commitments.filter(x => x.id !== editingCommitmentId);
+            }
+            let base = Date.now();
+            dias.forEach((day, i) => {
+                if (data.commitments.some(x => x.day === day && x.time === time && x.title === title)) return;
+                data.commitments.push({ id: 'cm_' + (base + i), title, day, time, note });
+            });
+
+            saveData();
+            closeModal('commitmentModal');
+            renderPlanner();
+            renderDashboard();
+        }
+
+        function removeCommitment(id) {
+            const cm = (data.commitments || []).find(x => x.id === id);
+            if (!cm) return;
+            if (!confirm(`Remover "${cm.title}" de ${DAYS[cm.day]} às ${cm.time}?`)) return;
+            data.commitments = data.commitments.filter(x => x.id !== id);
+            saveData();
+            renderPlanner();
+            renderDashboard();
         }
 
         function removeAppointment(clientId, day, time) {
@@ -3896,10 +4190,35 @@
             renderClientsTab();
         }
 
+        const DAY_SHORT = { segunda: 'Seg', terca: 'Ter', quarta: 'Qua', quinta: 'Qui',
+                            sexta: 'Sex', sabado: 'Sáb', domingo: 'Dom' };
+
+        function renderDayPicker(containerId, marcados) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const set = new Set(marcados || []);
+            el.innerHTML = DAY_ORDER.map(d => `
+                <label class="day-pill">
+                    <input type="checkbox" value="${d}" ${set.has(d) ? 'checked' : ''}>${DAY_SHORT[d]}
+                </label>`).join('');
+        }
+
+        function readDayPicker(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return [];
+            return Array.from(el.querySelectorAll('input:checked')).map(i => i.value);
+        }
+
+        function applyDayPreset(dias) {
+            renderDayPicker('plannerAddDays', dias);
+        }
+
         function openPlannerAdd(day) {
             if (!data.clients.length) { alert('Cadastre um cliente antes de montar a agenda.'); return; }
-            document.getElementById('plannerAddDay').value = day || '';
             document.getElementById('plannerAddTime').value = '';
+            renderDayPicker('plannerAddDays', day ? [day] : []);
+            const hint = document.getElementById('plannerAddHint');
+            hint.textContent = ''; hint.className = 'save-hint';
             const sel = document.getElementById('plannerAddClient');
             sel.innerHTML = '<option value="">Selecione o cliente…</option>' +
                 data.clients.slice().sort((a, b) => a.name.localeCompare(b.name))
@@ -3909,24 +4228,32 @@
 
         function savePlannerAdd() {
             const clientId = document.getElementById('plannerAddClient').value;
-            const day = document.getElementById('plannerAddDay').value;
+            const dias = readDayPicker('plannerAddDays');
             const time = document.getElementById('plannerAddTime').value;
             const hint = document.getElementById('plannerAddHint');
 
-            if (!clientId || !day || !time) {
-                hint.textContent = 'Preencha cliente, dia e horário.';
+            if (!clientId || !dias.length || !time) {
+                hint.textContent = 'Escolha o cliente, o horário e ao menos um dia.';
                 hint.className = 'save-hint error';
                 return;
             }
             const c = data.clients.find(x => x.id === clientId);
             if (!c) return;
             c.schedule = c.schedule || [];
-            if (c.schedule.some(x => x.day === day && x.time === time)) {
-                hint.textContent = 'Esse cliente já tem esse horário.';
+
+            let novos = 0, repetidos = 0;
+            dias.forEach(day => {
+                if (c.schedule.some(x => x.day === day && x.time === time)) { repetidos++; return; }
+                c.schedule.push({ day, time });
+                novos++;
+            });
+
+            if (novos === 0) {
+                hint.textContent = 'Esse cliente já tem esse horário nesses dias.';
                 hint.className = 'save-hint error';
                 return;
             }
-            c.schedule.push({ day, time });
+
             c.schedule = sortSchedule(c.schedule);
             c.day = c.schedule[0].day;
             c.time = c.schedule[0].time;
@@ -3935,6 +4262,10 @@
             renderPlanner();
             renderDashboard();
             renderClientsTab();
+
+            if (repetidos) {
+                alert(`${novos} horário(s) adicionado(s). ${repetidos} já existia(m) e foram ignorados.`);
+            }
         }
 
         // ============================================
