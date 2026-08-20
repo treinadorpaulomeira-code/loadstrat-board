@@ -665,6 +665,90 @@
             border-radius: 4px; vertical-align: middle;
         }
 
+        /* ============ TIPO DE ACOMPANHAMENTO ============ */
+        .type-picker { display: grid; gap: 10px; }
+
+        .type-option {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; cursor: pointer; user-select: none;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border); border-radius: 10px;
+            transition: all 0.15s ease;
+        }
+        .type-option:hover { border-color: rgba(212, 175, 55, 0.45); }
+        .type-option input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .type-option-icon { font-size: 1.3rem; flex-shrink: 0; }
+        .type-option-body { display: flex; flex-direction: column; gap: 2px; }
+        .type-option-body strong { font-size: 0.9rem; color: var(--text-primary); font-weight: 600; }
+        .type-option-body small { font-size: 0.76rem; color: var(--text-muted); }
+
+        .type-option-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            margin-left: auto; flex-shrink: 0;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+        }
+
+        .type-option:has(input[value="presencial"]:checked)    { background: rgba(176, 141, 30, 0.16); border-color: #b08d1e; }
+        .type-option:has(input[value="online"]:checked)        { background: rgba(13, 161, 151, 0.16); border-color: #0da197; }
+        .type-option:has(input[value="performance"]:checked)   { background: rgba(61, 118, 245, 0.16); border-color: #3d76f5; }
+        .type-option:has(input[value="performancepro"]:checked){ background: rgba(134, 82, 142, 0.20); border-color: #86528e; }
+
+        .type-tabs {
+            display: flex; gap: 8px; flex-wrap: wrap;
+            margin: 16px 0 4px; padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .type-tab {
+            padding: 8px 15px; font-size: 0.82rem; font-weight: 500;
+            color: var(--text-secondary); background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border); border-radius: 999px;
+            cursor: pointer; text-transform: none; letter-spacing: 0;
+            transition: all 0.15s ease;
+        }
+        .type-tab:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
+        .type-tab.active { color: var(--text-primary); background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.25); }
+        .type-tab.active.presencial    { background: rgba(176,141,30,0.18); border-color: #b08d1e; color: #d9b64a; }
+        .type-tab.active.online        { background: rgba(13,161,151,0.18); border-color: #0da197; color: #3fc9bd; }
+        .type-tab.active.performance   { background: rgba(61,118,245,0.18); border-color: #3d76f5; color: #7ba3f8; }
+        .type-tab.active.performancepro{ background: rgba(134,82,142,0.24); border-color: #86528e; color: #bd8ac5; }
+
+        .type-tab-count {
+            display: inline-block; margin-left: 5px; padding: 1px 7px;
+            font-size: 0.72rem; font-weight: 600;
+            background: rgba(0, 0, 0, 0.3); border-radius: 999px;
+        }
+
+        .type-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-left: 8px; padding: 2px 8px;
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.3px;
+            border-radius: 999px; vertical-align: middle;
+        }
+        .type-badge.presencial    { background: rgba(176,141,30,0.17); color: #d9b64a; border: 1px solid rgba(176,141,30,0.35); }
+        .type-badge.online        { background: rgba(13,161,151,0.18); color: #3fc9bd; border: 1px solid rgba(13,161,151,0.38); }
+        .type-badge.performance   { background: rgba(61,118,245,0.17); color: #7ba3f8; border: 1px solid rgba(61,118,245,0.35); }
+        .type-badge.performancepro{ background: rgba(134,82,142,0.24); color: #bd8ac5; border: 1px solid rgba(134,82,142,0.45); }
+
+        /* Cores por tipo no planner */
+        .planner-slot.cliente.t-online        { background: rgba(13,161,151,0.13);  border-left-color: #0da197; }
+        .planner-slot.cliente.t-performance   { background: rgba(61,118,245,0.13);  border-left-color: #3d76f5; }
+        .planner-slot.cliente.t-performancepro{ background: rgba(134,82,142,0.18);  border-left-color: #86528e; }
+        .planner-slot.cliente.t-online .planner-slot-time         { color: #3fc9bd; }
+        .planner-slot.cliente.t-performance .planner-slot-time    { color: #7ba3f8; }
+        .planner-slot.cliente.t-performancepro .planner-slot-time { color: #bd8ac5; }
+
+        .month-item.cliente.t-online        { background: rgba(13,161,151,0.14);  border-left-color: #0da197; color: #9fd8d2; }
+        .month-item.cliente.t-performance   { background: rgba(61,118,245,0.14);  border-left-color: #3d76f5; color: #a9c1f9; }
+        .month-item.cliente.t-performancepro{ background: rgba(134,82,142,0.20);  border-left-color: #86528e; color: #d0aad6; }
+        .month-item.cliente.t-online .month-item-time         { color: #3fc9bd; }
+        .month-item.cliente.t-performance .month-item-time    { color: #7ba3f8; }
+        .month-item.cliente.t-performancepro .month-item-time { color: #bd8ac5; }
+
+        .legend-dot.online         { background: #0da197; }
+        .legend-dot.performance    { background: #3d76f5; }
+        .legend-dot.performancepro { background: #86528e; }
+
         /* ============ VISÃO MENSAL ============ */
         .month-grid {
             display: grid;
@@ -1648,6 +1732,7 @@
                                 <div class="card-title">🎯 Controle de carga por atleta</div>
                                 <span style="font-size: 0.78rem; color: var(--text-muted);">semana atual vs. média das 4 anteriores · método de Foster</span>
                             </div>
+                            <div class="type-tabs" id="loadTypeTabs"></div>
                             <div id="athleteLoadTable"></div>
                         </div>
 
@@ -1692,6 +1777,7 @@
                                 <button onclick="openAddClientModal()">➕ Novo Cliente</button>
                             </div>
                         </div>
+                        <div class="type-tabs" id="clientTypeTabs"></div>
                         <div id="clientesList"></div>
                     </div>
                 </div>
@@ -1877,6 +1963,11 @@
             <div class="form-group">
                 <label>Nome</label>
                 <input type="text" id="clientName" placeholder="Ex: João Silva">
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de acompanhamento</label>
+                <div class="type-picker" id="clientTypePicker"></div>
             </div>
 
             <div class="form-group">
@@ -2434,8 +2525,9 @@
             if (stored) {
                 data = JSON.parse(stored);
             }
-            const m1 = migrateSchedules(), m2 = migrateModalities(), m3 = ensureCommitments(), m4 = ensureExceptions();
-            if (m1 || m2 || m3 || m4) saveData();
+            const m1 = migrateSchedules(), m2 = migrateModalities(), m3 = ensureCommitments(),
+                  m4 = ensureExceptions(), m5 = migrateClientTypes();
+            if (m1 || m2 || m3 || m4 || m5) saveData();
         }
 
         // ============================================
@@ -2724,6 +2816,50 @@
         // CLIENTS
         // ============================================
 
+        const TYPE_DESC = {
+            presencial: 'Atendimento presencial com horário fixo na agenda',
+            online: 'Sessão online com horário marcado',
+            performance: 'Acompanhamento de carga e planilha, sem horário fixo',
+            performancepro: 'Acompanhamento completo com contato próximo'
+        };
+
+        function renderTypePicker(containerId, inputName, selecionado, onchange) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = CLIENT_TYPE_ORDER.map(k => {
+                const t = CLIENT_TYPES[k];
+                return `
+                    <label class="type-option" data-tipo="${k}">
+                        <input type="radio" name="${inputName}" value="${k}"
+                               ${selecionado === k ? 'checked' : ''} ${onchange ? `onchange="${onchange}"` : ''}>
+                        <span class="type-option-icon">${t.icon}</span>
+                        <span class="type-option-body">
+                            <strong>${t.label}</strong>
+                            <small>${TYPE_DESC[k]}</small>
+                        </span>
+                        <span class="type-option-dot" style="background:${t.color}"></span>
+                    </label>`;
+            }).join('');
+        }
+
+        function renderClientTypeTabs() {
+            const el = document.getElementById('clientTypeTabs');
+            if (!el) return;
+            const cont = t => (data.clients || []).filter(c => matchesFilter(c, t)).length;
+            const abas = [{ k: 'todos', label: 'Todos', icon: '👥' }].concat(
+                CLIENT_TYPE_ORDER.map(k => ({ k, label: CLIENT_TYPES[k].short, icon: CLIENT_TYPES[k].icon })));
+            el.innerHTML = abas.map(a => `
+                <button class="type-tab ${clientFilter === a.k ? 'active ' + a.k : ''}"
+                        onclick="setClientFilter('${a.k}')">
+                    ${a.icon} ${a.label} <span class="type-tab-count">${cont(a.k)}</span>
+                </button>`).join('');
+        }
+
+        function setClientFilter(f) {
+            clientFilter = f;
+            renderClientsTab();
+        }
+
         function renderClientsTab() {
             const container = document.getElementById('clientesList');
 
@@ -2732,17 +2868,33 @@
                 return;
             }
 
-            container.innerHTML = data.clients.slice().sort((a, b) => a.name.localeCompare(b.name)).map(client => {
+            renderClientTypeTabs();
+
+            const lista = data.clients.slice()
+                .filter(c => matchesFilter(c, clientFilter))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            if (!lista.length) {
+                container.innerHTML = `<div class="empty-state">Nenhum cliente ${clientFilter === 'todos' ? '' : CLIENT_TYPES[clientFilter].short.toLowerCase()} cadastrado</div>`;
+                return;
+            }
+
+            container.innerHTML = lista.map(client => {
                 const horarios = scheduleSummary(client);
+                const t = clientType(client);
+                const tp = CLIENT_TYPES[t];
                 return `
                 <div class="list-item">
                     <div class="list-item-content">
-                        <div class="list-item-title">${client.name}</div>
+                        <div class="list-item-title">
+                            ${client.name}
+                            <span class="type-badge ${t}">${tp.icon} ${tp.short}</span>
+                        </div>
                         <div class="list-item-subtitle">
                             ${client.modalities.map(m => `<span class="tag">${MODALITIES[m]?.icon} ${m}</span>`).join('')}
                         </div>
                         <div style="margin-top: 6px; font-size: 0.8rem; color: ${horarios ? 'var(--primary)' : 'var(--text-muted)'};">
-                            🕐 ${horarios || 'sem horário definido'}
+                            🕐 ${horarios || (t === 'online' ? 'acompanhamento a distância' : 'sem horário definido')}
                         </div>
                     </div>
                     <div class="list-item-actions">
@@ -2754,6 +2906,7 @@
 
         function openAddClientModal() {
             document.getElementById('clientName').value = '';
+            renderTypePicker('clientTypePicker', 'clientTipo', 'presencial');
             document.querySelectorAll('.modality-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('clientDay').value = '';
             document.getElementById('clientTime').value = '';
@@ -2771,9 +2924,12 @@
                 return;
             }
 
+            const tipo = (document.querySelector('input[name="clientTipo"]:checked') || {}).value || 'presencial';
+
             const client = {
                 id: 'c_' + Date.now(),
                 name,
+                tipo,
                 modalities,
                 day,
                 time,
@@ -2894,6 +3050,42 @@
             renderDashboard();
         }
 
+        // ============================================
+        // TIPO DE ATENDIMENTO — presencial x consultoria online
+        // ============================================
+        // Paleta validada para superfície escura #1a1a1a (luminosidade, chroma, daltonismo)
+        const CLIENT_TYPES = {
+            presencial:   { label: 'Personal Presencial',        short: 'Presencial', icon: '🤝', color: '#b08d1e', agenda: true  },
+            online:       { label: 'Personal Online',            short: 'Online',     icon: '💻', color: '#0da197', agenda: true  },
+            performance:  { label: 'Consultoria Performance',    short: 'Performance', icon: '📈', color: '#3d76f5', agenda: false },
+            performancepro:{ label: 'Consultoria Performance PRO', short: 'Perf. PRO', icon: '🏆', color: '#86528e', agenda: false }
+        };
+
+        const CLIENT_TYPE_ORDER = ['presencial', 'online', 'performance', 'performancepro'];
+
+        function clientType(c) {
+            const t = c && c.tipo;
+            return CLIENT_TYPES[t] ? t : 'presencial';
+        }
+
+        function typeColor(c) { return CLIENT_TYPES[clientType(c)].color; }
+
+        function migrateClientTypes() {
+            let changed = false;
+            (data.clients || []).forEach(c => {
+                if (!CLIENT_TYPES[c.tipo]) { c.tipo = 'presencial'; changed = true; }
+            });
+            return changed;
+        }
+
+        // Filtro ativo na aba Clientes e no dashboard
+        let clientFilter = 'todos';
+        let loadFilter = 'todos';
+
+        function matchesFilter(c, f) {
+            return f === 'todos' || clientType(c) === f;
+        }
+
         // ---- Compromissos pessoais do treinador (não são atendimentos) ----
         function ensureCommitments() {
             if (!Array.isArray(data.commitments)) { data.commitments = []; return true; }
@@ -2982,6 +3174,11 @@
                     <input type="text" id="editClientName" value="${client.name}" oninput="markClientDirty()">
                 </div>
                 <div class="form-group">
+                    <label>Tipo de acompanhamento</label>
+                    <div class="type-picker" id="editTypePicker"></div>
+                </div>
+
+                <div class="form-group">
                     <label>Modalidades</label>
                     <div class="modality-picker">
                         ${Object.keys(MODALITIES).map(m => `
@@ -3002,6 +3199,7 @@
                 <div id="clientSessionsSummary" class="client-sessions-summary"></div>
             `;
 
+            renderTypePicker('editTypePicker', 'editClientTipo', clientType(client), 'markClientDirty()');
             renderScheduleEditor(client.schedule || []);
             renderClientSessionsSummary(clientId);
             clientDirty = false;
@@ -3114,6 +3312,8 @@
                 return;
             }
 
+            const tipoSel = document.querySelector('#clientDetailsModal input[name="editClientTipo"]:checked');
+            client.tipo = tipoSel ? tipoSel.value : clientType(client);
             client.name = name;
             client.modalities = modalities;
             client.schedule = sortSchedule(schedule);
@@ -3997,7 +4197,7 @@
                 team.ratio === null ? 'sem histórico suficiente' : `${st.icon} ${st.label} · ideal 0,8–1,3`;
 
             // --- Por atleta ---
-            const perAthlete = (data.clients || []).map(c => {
+            const perAthlete = (data.clients || []).filter(c => matchesFilter(c, loadFilter)).map(c => {
                 const ss = allSessions.filter(s => s.clientId === c.id);
                 const a = acuteChronic(ss);
                 const ms = monotoniaStrain(ss);
@@ -4057,11 +4257,32 @@
                     </div>`).join('');
         }
 
+        function renderLoadTypeTabs() {
+            const el = document.getElementById('loadTypeTabs');
+            if (!el) return;
+            const comSessao = k => (data.clients || [])
+                .filter(c => matchesFilter(c, k))
+                .filter(c => (data.sessions || []).some(s => s.clientId === c.id)).length;
+            const abas = [{ k: 'todos', label: 'Todos', icon: '👥' }].concat(
+                CLIENT_TYPE_ORDER.map(k => ({ k, label: CLIENT_TYPES[k].short, icon: CLIENT_TYPES[k].icon })));
+            el.innerHTML = abas.map(a => `
+                <button class="type-tab ${loadFilter === a.k ? 'active ' + a.k : ''}"
+                        onclick="setLoadFilter('${a.k}')">
+                    ${a.icon} ${a.label} <span class="type-tab-count">${comSessao(a.k)}</span>
+                </button>`).join('');
+        }
+
+        function setLoadFilter(f) {
+            loadFilter = f;
+            renderDashboard();
+        }
+
         function renderAthleteLoadTable(perAthlete) {
+            renderLoadTypeTabs();
             const el = document.getElementById('athleteLoadTable');
             if (!el) return;
             if (!perAthlete.length) {
-                el.innerHTML = '<div style="color: var(--text-muted); padding: 24px 0;">Nenhuma sessão registrada ainda. Registre treinos em Periodização.</div>';
+                el.innerHTML = `<div style="color: var(--text-muted); padding: 24px 0;">Nenhum atleta ${loadFilter === 'todos' ? '' : CLIENT_TYPES[loadFilter].short.toLowerCase() + ' '}com sessões registradas.</div>`;
                 return;
             }
             const order = { critical: 0, warning: 1, good: 2, neutral: 3 };
@@ -4085,7 +4306,7 @@
                         <tbody>
                             ${rows.map(a => `
                                 <tr>
-                                    <td>${a.client.name}</td>
+                                    <td>${a.client.name}<span class="type-badge ${clientType(a.client)}">${CLIENT_TYPES[clientType(a.client)].icon} ${CLIENT_TYPES[clientType(a.client)].short}</span></td>
                                     <td style="text-align:right"><strong>${Math.round(a.acute).toLocaleString('pt-BR')}</strong></td>
                                     <td style="text-align:right">${a.chronic ? Math.round(a.chronic).toLocaleString('pt-BR') : '—'}</td>
                                     <td style="text-align:right">${a.ratio === null ? '—' : a.ratio.toFixed(2).replace('.', ',')}</td>
@@ -4308,7 +4529,7 @@
                             <div class="month-cell ${foraDoMes ? 'fora' : ''} ${ehHoje ? 'hoje' : ''}">
                                 <div class="month-daynum">${d.getDate()}</div>
                                 ${mostra.map(e => `
-                                    <div class="month-item ${e.kind}${e.fixo ? '' : ' extra'}"
+                                    <div class="month-item ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}"
                                          title="${e.time} — ${e.kind === 'cliente' ? e.client.name : e.commitment.title}">
                                         <span class="month-item-time">${e.time}</span>
                                         ${e.kind === 'cliente' ? e.client.name : e.commitment.title}
@@ -4345,9 +4566,13 @@
             container.innerHTML = `
                 <div class="planner-bar">
                     <div class="planner-count">
-                        <span class="legend-dot cliente"></span> ${nAtend} atendimento(s)
-                        <span class="legend-dot compromisso" style="margin-left:14px;"></span> ${nComp} compromisso(s)
-                        <span style="margin-left:14px; color: var(--text-muted);">semana de ${fmt(ini)} a ${fmt(fim)}</span>
+                        ${CLIENT_TYPE_ORDER.map(k => {
+                            const n = DAY_ORDER.reduce((acc, d) => acc + agendaOfDay(d)
+                                .filter(e => e.kind === 'cliente' && clientType(e.client) === k).length, 0);
+                            return n ? `<span style="margin-right:14px;"><span class="legend-dot" style="background:${CLIENT_TYPES[k].color}"></span>${n} ${CLIENT_TYPES[k].short}</span>` : '';
+                        }).join('')}
+                        ${nComp ? `<span style="margin-right:14px;"><span class="legend-dot compromisso"></span>${nComp} compromisso(s)</span>` : ''}
+                        <span style="color: var(--text-muted);">semana de ${fmt(ini)} a ${fmt(fim)}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button class="chart-toggle" onclick="setPlannerView('mes')">🗓️ Ver mês</button>
@@ -4398,7 +4623,7 @@
                                                     ? (e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')
                                                     : '📌';
                                                 return `
-                                                <div class="planner-slot ${e.kind}${e.fixo ? '' : ' extra'}">
+                                                <div class="planner-slot ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}">
                                                     <div class="planner-slot-top">
                                                         <span class="planner-slot-time">${e.time}</span>
                                                         <span class="planner-slot-mods">${icones}${e.fixo ? '' : ' <span class="badge-extra">só esta semana</span>'}</span>
