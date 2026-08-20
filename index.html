@@ -2,7 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
     <title>Sistema Profissional Unificado - Paulo Meira</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1291,30 +1294,7 @@
             }
         }
 
-        @media (max-width: 768px) {
-            .app {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                border-bottom: 1px solid var(--border);
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
+        /* (bloco antigo de 768px removido — a regra mobile única fica no fim do arquivo) */
 
         ::-webkit-scrollbar {
             width: 8px;
@@ -1595,6 +1575,242 @@
             color: #d4af37;
             margin-bottom: 5px;
         }
+
+        /* ============================================
+           MOBILE — iPhone / Android
+           Sidebar vira barra inferior; conteúdo ocupa a tela toda.
+           ============================================ */
+
+        .nav-icon { margin-right: 8px; }
+        .nav-short { display: none; }
+
+        @supports (height: 100dvh) {
+            .app { height: 100dvh; }
+        }
+
+        @media (max-width: 900px) {
+            html, body { height: auto; overflow: visible; }
+
+            body {
+                overflow-x: hidden;
+                -webkit-text-size-adjust: 100%;
+            }
+
+            .app {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding-bottom: calc(66px + env(safe-area-inset-bottom));
+            }
+
+            /* --- Barra inferior --- */
+            .sidebar {
+                position: fixed;
+                left: 0; right: 0; bottom: 0; top: auto;
+                width: 100%;
+                height: auto;
+                z-index: 900;
+                flex-direction: row;
+                overflow: visible;
+                border-right: none;
+                border-top: 1px solid rgba(212, 175, 55, 0.35);
+                background: rgba(14, 14, 14, 0.97);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.5);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .sidebar-header { display: none; }
+
+            .sidebar-content {
+                padding: 0;
+                overflow: visible;
+                width: 100%;
+            }
+
+            .sidebar-section { margin-bottom: 0; }
+            .sidebar-section-title { display: none; }
+
+            .sidebar-menu {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: stretch;
+                gap: 0;
+                padding: 0 2px;
+                width: 100%;
+            }
+
+            .sidebar-item {
+                flex: 1 1 0;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                padding: 9px 2px 7px;
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                font-size: 0.58rem;
+                line-height: 1.1;
+                color: var(--text-muted);
+                text-align: center;
+                border-top: 2px solid transparent;
+            }
+
+            .sidebar-item.active {
+                background: transparent;
+                color: var(--primary);
+                border-top-color: var(--primary);
+            }
+
+            .sidebar-item .nav-icon { margin: 0; font-size: 1.15rem; }
+            .sidebar-item .nav-text { display: none; }
+            .sidebar-item .nav-short {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+
+            /* --- Conteúdo --- */
+            .main-content {
+                width: 100%;
+                overflow: visible;
+                padding-top: env(safe-area-inset-top);
+            }
+
+            .header {
+                position: sticky; top: 0; z-index: 400;
+                display: flex; flex-wrap: nowrap; align-items: center;
+                justify-content: space-between; gap: 10px;
+                padding: 10px 14px;
+                background: rgba(20, 20, 20, 0.97);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .header > div { min-width: 0; }
+            .header > div:last-child {
+                display: flex; align-items: center; gap: 8px;
+                text-align: right; flex-shrink: 0;
+            }
+            .header > div:last-child > div { margin-top: 0 !important; }
+
+            .header-title {
+                font-size: 1.05rem;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .header-subtitle { display: none; }
+
+            .sync-indicator {
+                display: inline-block; max-width: 118px;
+                padding: 3px 8px; font-size: 0.62rem;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .time-display { display: none; }
+            #headerUser { display: none; }
+            .header a[onclick*="cloudLogout"] { font-size: 0.72rem; margin-left: 8px; }
+
+            .tab-content { padding: 14px; }
+
+            .grid-2, .grid-3, .stats-grid, .modalities-grid, .form-row {
+                grid-template-columns: 1fr !important;
+            }
+
+            .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .kpi-value { font-size: 1.55rem; }
+            .kpi-tile { padding: 14px 15px 12px; }
+
+            .card, .chart-card { padding: 16px 15px; }
+            .chart-container { height: 260px; }
+
+            /* Toque confortável e sem zoom automático no iOS */
+            .form-group input,
+            .form-group select,
+            .form-group textarea,
+            .schedule-row select,
+            .schedule-row input {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            button { min-height: 44px; }
+            .btn-small, .chart-toggle, .day-presets button { min-height: 36px; }
+
+            /* --- Planner: uma coluna por dia --- */
+            .planner-grid { grid-template-columns: 1fr; }
+            .planner-day { min-height: 0; }
+            .planner-bar { align-items: flex-start; flex-direction: column; }
+            .planner-bar > div:last-child { width: 100%; }
+            .planner-bar .chart-toggle { flex: 1; }
+
+            .planner-slot-actions button { width: 32px; height: 32px; font-size: 0.9rem; }
+            .planner-add { width: 34px; height: 34px; font-size: 1.1rem; }
+
+            /* --- Mês: rolagem horizontal preservando a grade --- */
+            .chart-table, .month-scroll { -webkit-overflow-scrolling: touch; }
+            .month-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -15px; padding: 0 15px; }
+            .month-grid { min-width: 620px; }
+            .month-cell { min-height: 76px; }
+            .month-item { font-size: 0.6rem; }
+
+            /* --- Modais --- */
+            .modal {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .modal-content {
+                width: 100%;
+                max-width: 100% !important;
+                max-height: 92vh;
+                max-height: 92dvh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 16px 16px 0 0;
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            }
+            .modal-content { padding-bottom: 0; }
+
+            .modal-footer {
+                position: sticky;
+                bottom: 0;
+                margin: 22px -20px 0;
+                padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+                background: var(--bg-secondary);
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.45);
+            }
+            .modal-footer button { flex: 1 1 auto; min-width: 96px; }
+            .modal-footer .save-hint { flex: 1 0 100%; text-align: left; order: -1; }
+
+            /* Cartões de tipo mais compactos no celular */
+            .type-option { padding: 11px 12px; gap: 10px; }
+            .type-option-icon { font-size: 1.15rem; }
+            .type-option-body strong { font-size: 0.85rem; }
+            .type-option-body small { font-size: 0.72rem; line-height: 1.3; }
+
+            .type-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .type-tab { white-space: nowrap; flex-shrink: 0; }
+
+            .day-picker { gap: 6px; }
+            .day-pill { min-width: 46px; padding: 11px 8px; }
+
+            table { font-size: 0.8rem; }
+            .chart-table { overflow-x: auto; }
+        }
+
+        @media (max-width: 420px) {
+            .kpi-row { grid-template-columns: 1fr; }
+            .sidebar-item { font-size: 0.53rem; }
+            .sidebar-item .nav-icon { font-size: 1.05rem; }
+            .month-grid { min-width: 560px; }
+        }
     </style>
 </head>
 <body>
@@ -1636,25 +1852,25 @@
                     <div class="sidebar-section-title">Módulos</div>
                     <div class="sidebar-menu">
                         <div class="sidebar-item active" onclick="switchTab('dashboard')">
-                            📊 Dashboard
+                            <span class="nav-icon">📊</span><span class="nav-text">Dashboard</span><span class="nav-short">Início</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('periodization')">
-                            📈 Periodização
+                            <span class="nav-icon">📈</span><span class="nav-text">Periodização</span><span class="nav-short">Período</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('planner')">
-                            📅 Planner
+                            <span class="nav-icon">📅</span><span class="nav-text">Planner</span><span class="nav-short">Agenda</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('clientes')">
-                            👥 Clientes
+                            <span class="nav-icon">👥</span><span class="nav-text">Clientes</span><span class="nav-short">Clientes</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('financeiro')">
-                            💰 Financeiro
+                            <span class="nav-icon">💰</span><span class="nav-text">Financeiro</span><span class="nav-short">Financ.</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('relatorios')">
-                            📄 Relatórios
+                            <span class="nav-icon">📄</span><span class="nav-text">Relatórios</span><span class="nav-short">Laudos</span>
                         </div>
                         <div class="sidebar-item" onclick="switchTab('config')">
-                            ⚙️ Configurações
+                            <span class="nav-icon">⚙️</span><span class="nav-text">Configurações</span><span class="nav-short">Config</span>
                         </div>
                     </div>
                 </div>
@@ -4516,6 +4732,7 @@
                     </div>
                 </div>
 
+                <div class="month-wrap">
                 <div class="month-grid">
                     ${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => `<div class="month-head">${d}</div>`).join('')}
                     ${celulas.map(d => {
@@ -4537,6 +4754,7 @@
                                 ${resto > 0 ? `<div class="month-more">+${resto}</div>` : ''}
                             </div>`;
                     }).join('')}
+                </div>
                 </div>`;
         }
 
