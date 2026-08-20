@@ -1588,6 +1588,124 @@
             .app { height: 100dvh; }
         }
 
+        /* ============ CRONOGRAMA DE CORRIDA ============ */
+        .run-result:empty { display: none; }
+        .run-result {
+            margin-top: 16px;
+            background: rgba(212,175,55,0.07);
+            border: 1px solid rgba(212,175,55,0.28);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .run-result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+        }
+        .run-result-grid > div { display: flex; flex-direction: column; gap: 2px; }
+        .run-result-grid span {
+            font-size: 0.7rem; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .run-result-grid strong { font-size: 1.28rem; color: var(--primary); line-height: 1.2; }
+        .run-result-grid small { font-size: 0.74rem; color: var(--text-secondary); }
+
+        .run-summary {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .cell-edit {
+            cursor: text;
+            border-radius: 4px;
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+        .cell-edit:hover { background: rgba(212,175,55,0.07); }
+        .cell-edit:focus {
+            outline: none;
+            background: rgba(212,175,55,0.12);
+            box-shadow: inset 0 0 0 1px rgba(212,175,55,0.55);
+        }
+        #runPlanTable, #runZonesTable { table-layout: fixed; width: 100%; }
+        #runPlanTable td, #runZonesTable td { vertical-align: top; line-height: 1.5; }
+        #runPlanTable th, #runPlanTable td,
+        #runZonesTable th, #runZonesTable td {
+            white-space: normal;
+            word-break: break-word;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        #runPlanTable { font-size: 0.8rem; }
+        #runZonesTable th:first-child, #runZonesTable td:first-child { width: 92px; }
+        #runZonesTable th:nth-child(2), #runZonesTable td:nth-child(2) { width: 120px; }
+        #runPlanTable b { color: var(--primary); font-weight: 600; }
+        .row-deload td { background: rgba(212,175,55,0.06); }
+
+        .zone-dot {
+            display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+            margin-right: 7px; vertical-align: middle;
+        }
+        /* Rampa ordinal (mesma matiz, luminancia crescente) — validada para daltonismo */
+        .zone-dot.z1 { background: #7a6a3d; }
+        .zone-dot.z2 { background: #9c8748; }
+        .zone-dot.z3 { background: #bda453; }
+        .zone-dot.z4 { background: #dcc260; }
+        .zone-dot.z5 { background: #f6e08a; }
+
+        /* ============ ASSISTENTE DE AGENDA ============ */
+        .ai-score {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            margin-bottom: 18px;
+        }
+        .ai-score-box {
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px; text-align: center; background: rgba(255,255,255,0.03);
+        }
+        .ai-score-box.critical { border-color: rgba(192,79,87,0.5); }
+        .ai-score-box.warning  { border-color: rgba(201,106,47,0.5); }
+        .ai-score-box.good     { border-color: rgba(63,158,116,0.5); }
+        .ai-score-num { font-size: 1.7rem; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+        .ai-score-box.critical .ai-score-num { color: #e34b57; }
+        .ai-score-box.warning  .ai-score-num { color: #eba640; }
+        .ai-score-box.good     .ai-score-num { color: #4dbd8a; }
+        .ai-score-lbl {
+            font-size: 0.68rem; letter-spacing: 0.9px; text-transform: uppercase;
+            color: var(--text-muted); margin-top: 3px;
+        }
+
+        .ai-item {
+            border-left: 3px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            border-radius: 0 8px 8px 0;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .ai-item.critical { border-left-color: #c04f57; }
+        .ai-item.warning  { border-left-color: #c96a2f; }
+        .ai-item.good     { border-left-color: #3f9e74; }
+        .ai-item.neutral  { border-left-color: #6b6b6b; }
+        .ai-item-head { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+        .ai-badge {
+            flex: 0 0 auto; width: 19px; height: 19px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 700; color: #12100c;
+        }
+        .ai-badge.critical { background: #e34b57; }
+        .ai-badge.warning  { background: #eba640; }
+        .ai-badge.good     { background: #4dbd8a; }
+        .ai-badge.neutral  { background: #9a9a9a; }
+        .ai-item-title { font-weight: 600; color: var(--text-primary); font-size: 0.93rem; }
+        .ai-item-text { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.55; }
+        .ai-item-btn { margin-top: 9px; }
+
+        .planner-day.day-focus {
+            box-shadow: 0 0 0 2px var(--primary);
+            transition: box-shadow 0.25s;
+        }
+
+
         @media (max-width: 900px) {
             html, body { height: auto; overflow: visible; }
 
@@ -1964,7 +2082,10 @@
                     <div class="card grid-full">
                         <div class="flex-between">
                             <div class="card-title">📈 Periodização MultiSports</div>
-                            <button onclick="openClientSelector()">Selecionar Cliente</button>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="chart-toggle" onclick="openRunPlanner()">🏃 Cronograma de corrida</button>
+                                <button onclick="openClientSelector()">Selecionar Cliente</button>
+                            </div>
                         </div>
                         <div id="periodizationContent">
                             <div class="empty-state">
@@ -2237,6 +2358,172 @@
                 <span id="clientSaveHint" class="save-hint"></span>
                 <button class="btn-secondary" onclick="closeClientDetails()">Fechar</button>
                 <button id="saveClientBtn" onclick="saveClientChanges()">Salvar alterações</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: ASSISTENTE DE AGENDA -->
+    <div id="plannerAiModal" class="modal">
+        <div class="modal-content" style="max-width: 720px;">
+            <div class="modal-header">
+                <div class="modal-title">🧠 Assistente de agenda</div>
+                <button class="modal-close" onclick="closeModal('plannerAiModal')">✕</button>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 18px;">
+                Análise da sua semana: conflitos, janelas ociosas, distribuição de turnos e carga dos atletas agendados.
+            </p>
+            <div id="plannerAiBody"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="openPlannerAi()">↻ Reanalisar</button>
+                <button onclick="closeModal('plannerAiModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CRONOGRAMA DE CORRIDA -->
+    <div id="runPlannerModal" class="modal">
+        <div class="modal-content" style="max-width: 980px;">
+            <div class="modal-header">
+                <div class="modal-title">🏃 Periodizar treino de corrida</div>
+                <button class="modal-close" onclick="closeModal('runPlannerModal')">✕</button>
+            </div>
+
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 18px;">
+                Baseado nas diretrizes do <strong>ACSM</strong> e em progressão de volume de
+                <strong>5–10% por semana</strong>, conforme a literatura. Revise e ajuste tudo antes de gerar o PDF.
+            </p>
+
+            <!-- ETAPA 1: dados e teste -->
+            <div id="runStep1">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <select id="runClient" onchange="onRunClientChange()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome no cronograma</label>
+                        <input type="text" id="runName" placeholder="Ex: Guilherme Silva">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Idade</label>
+                        <input type="number" id="runAge" min="10" max="90" placeholder="Ex: 35" oninput="updateRunPreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Sexo</label>
+                        <select id="runSex" onchange="updateRunPreview()">
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Teste aplicado</label>
+                    <select id="runTest" onchange="onRunTestChange()">
+                        <option value="cooper">Teste de Cooper — 12 minutos</option>
+                        <option value="milha">Teste de 1 milha — caminhada (Rockport)</option>
+                        <option value="manual">Já tenho o VO₂máx</option>
+                    </select>
+                </div>
+
+                <div id="runTestFields"></div>
+
+                <div class="run-result" id="runResult"></div>
+
+                <div class="form-group" style="margin-top: 18px;">
+                    <label>FC máxima</label>
+                    <div class="form-row" style="margin:0;">
+                        <div>
+                            <select id="runHrSource" onchange="updateRunPreview()">
+                                <option value="tanaka">Estimar pela idade (Tanaka)</option>
+                                <option value="medida">FC máxima medida (relógio/teste)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="number" id="runHrMax" min="120" max="230" placeholder="bpm" oninput="updateRunPreview()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Semanas</label>
+                        <select id="runWeeks" onchange="updateRunPreview()">
+                            <option value="4">4 semanas</option>
+                            <option value="6">6 semanas</option>
+                            <option value="8">8 semanas</option>
+                            <option value="12">12 semanas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sessões por semana</label>
+                        <select id="runFreq" onchange="updateRunPreview()">
+                            <option value="2">2x por semana</option>
+                            <option value="3" selected>3x por semana</option>
+                            <option value="4">4x por semana</option>
+                            <option value="5">5x por semana</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Volume inicial da sessão contínua</label>
+                        <input type="number" id="runBaseMin" min="10" max="120" value="20" oninput="updateRunPreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Progressão semanal</label>
+                        <select id="runProgress" onchange="updateRunPreview()">
+                            <option value="5">5% — conservadora</option>
+                            <option value="8" selected>8% — moderada</option>
+                            <option value="10">10% — teto da literatura</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label style="display:flex; align-items:center; gap:9px; margin-top:6px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
+                    <input type="checkbox" id="runDeload" onchange="updateRunPreview()" style="width:auto;">
+                    Incluir semana de descarregamento a cada 4 semanas
+                </label>
+
+                <div class="modal-footer">
+                    <span id="runHint" class="save-hint"></span>
+                    <button class="btn-secondary" onclick="closeModal('runPlannerModal')">Cancelar</button>
+                    <button onclick="buildRunPlan()">Gerar cronograma →</button>
+                </div>
+            </div>
+
+            <!-- ETAPA 2: revisão editável -->
+            <div id="runStep2" style="display:none;">
+                <div class="run-summary" id="runSummary"></div>
+
+                <div class="flex-between" style="margin: 18px 0 10px;">
+                    <div class="card-title" style="margin:0;">Zonas de frequência cardíaca</div>
+                    <span style="font-size:0.76rem; color:var(--text-muted);">clique para editar</span>
+                </div>
+                <div class="chart-table"><table class="data-table" id="runZonesTable"></table></div>
+
+                <div class="flex-between" style="margin: 22px 0 10px;">
+                    <div class="card-title" style="margin:0;">Cronograma</div>
+                    <span style="font-size:0.76rem; color:var(--text-muted);">clique em qualquer célula para ajustar</span>
+                </div>
+                <div class="chart-table"><table class="data-table" id="runPlanTable"></table></div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Observações do cronograma</label>
+                    <textarea id="runNotes" rows="4"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="backToRunStep1()">← Voltar</button>
+                    <button class="btn-secondary" onclick="buildRunPlan(true)">↺ Recalcular</button>
+                    <button class="btn-secondary" onclick="saveRunPlanToClient()">💾 Salvar no cliente</button>
+                    <button onclick="generateRunPDF()">📄 Gerar PDF</button>
+                </div>
             </div>
         </div>
     </div>
@@ -3000,11 +3287,21 @@
         }
 
         function switchTab(tabName) {
+            const alvo = document.getElementById(tabName);
+            if (!alvo) return;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
+            alvo.classList.add('active');
 
+            // Marca o item do menu: pelo clique, se houver; senao pelo proprio nome da aba
             document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.sidebar-item').classList.add('active');
+            let item = null;
+            const ev = (typeof event !== 'undefined') ? event : null;
+            if (ev && ev.target && ev.target.closest) item = ev.target.closest('.sidebar-item');
+            if (!item) {
+                item = [...document.querySelectorAll('.sidebar-item')]
+                    .find(el => (el.getAttribute('onclick') || '').includes(`'${tabName}'`)) || null;
+            }
+            if (item) item.classList.add('active');
 
             const titles = {
                 'dashboard': '📊 Dashboard',
@@ -3590,6 +3887,7 @@
 
         function renderClientSessions(clientId) {
             const container = document.getElementById('clientSessions');
+            if (!container) return;   // a lista de sessoes saiu do modal de cadastro
             const sessions = data.sessions.filter(s => s.clientId === clientId).sort((a, b) => new Date(b.date) - new Date(a.date));
 
             if (sessions.length === 0) {
@@ -4725,6 +5023,7 @@
                         <span style="margin-left: 12px;">${totalMes} compromisso(s) no mês</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="chart-toggle ai-btn" onclick="openPlannerAi()">🧠 Assistente</button>
                         <button class="chart-toggle" onclick="setPlannerView('semana')">📅 Ver semana</button>
                         <button class="chart-toggle" onclick="shiftMonth(-1)">‹</button>
                         <button class="chart-toggle" onclick="goToday()">Hoje</button>
@@ -4793,6 +5092,7 @@
                         <span style="color: var(--text-muted);">semana de ${fmt(ini)} a ${fmt(fim)}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="chart-toggle ai-btn" onclick="openPlannerAi()">🧠 Assistente</button>
                         <button class="chart-toggle" onclick="setPlannerView('mes')">🗓️ Ver mês</button>
                         <button class="chart-toggle" onclick="openCommitmentAdd('')">📌 Novo compromisso</button>
                         <button class="chart-toggle" onclick="openPlannerAdd('')">➕ Novo atendimento</button>
@@ -5068,6 +5368,636 @@
             if (repetidos) {
                 alert(`${novos} horário(s) adicionado(s). ${repetidos} já existia(m) e foram ignorados.`);
             }
+        }
+
+        // ============================================
+        // PERIODIZAÇÃO DE CORRIDA
+        // VO2máx por Cooper (12 min) ou 1 milha (Rockport/Kline).
+        // Zonas por %FCmáx. Progressão de volume 5–10%/semana (ACSM).
+        // Tudo é editável antes de gerar o PDF.
+        // ============================================
+
+        let runPlan = null;   // { zonas, semanas, resumo }
+
+        // --- VO2máx ---
+        function vo2Cooper(metros) {
+            return (Number(metros) - 504.9) / 44.73;
+        }
+
+        // Rockport (Kline et al.): peso em kg, tempo em minutos, FC ao final
+        function vo2Milha(pesoKg, idade, sexoM, tempoMin, fcFinal) {
+            const lb = Number(pesoKg) * 2.20462;
+            return 132.853 - (0.0769 * lb) - (0.3877 * Number(idade))
+                 + (6.315 * (sexoM ? 1 : 0)) - (3.2649 * Number(tempoMin)) - (0.1565 * Number(fcFinal));
+        }
+
+        function fcMaxTanaka(idade) {
+            return Math.round(208 - 0.7 * Number(idade));
+        }
+
+        // Classificação de aptidão cardiorrespiratória (faixas de referência ACSM)
+        const VO2_NORMS = {
+            M: [[20,29,[33.0,36.5,42.5,46.5,55.5]],[30,39,[31.5,35.5,41.0,45.0,54.0]],
+                [40,49,[30.2,33.6,38.9,43.8,52.5]],[50,59,[26.1,29.0,35.2,40.0,48.9]],
+                [60,99,[20.5,24.5,32.3,36.7,45.7]]],
+            F: [[20,29,[28.6,32.3,37.6,41.0,49.6]],[30,39,[26.8,29.5,34.7,38.6,47.4]],
+                [40,49,[24.1,26.9,31.4,36.3,45.3]],[50,59,[20.8,23.1,27.5,32.3,39.7]],
+                [60,99,[17.5,20.0,24.0,27.7,36.7]]]
+        };
+
+        function classificaVO2(vo2, idade, sexo) {
+            const faixas = VO2_NORMS[sexo === 'F' ? 'F' : 'M'];
+            const linha = faixas.find(f => idade >= f[0] && idade <= f[1]) || faixas[faixas.length - 1];
+            const [p10, p25, p50, p75, p90] = linha[2];
+            if (vo2 < p10) return 'Muito fraca';
+            if (vo2 < p25) return 'Fraca';
+            if (vo2 < p50) return 'Regular';
+            if (vo2 < p75) return 'Boa';
+            if (vo2 < p90) return 'Excelente';
+            return 'Superior';
+        }
+
+        // --- Zonas de FC (5 zonas por %FCmáx) ---
+        // Limiares de %FCmáx entre as zonas — contíguos, sem faixa morta entre elas
+        const ZONE_PCT = [
+            { z: 'Z1', teto: 0.680,  uso: 'Aquecimento e desaquecimento' },
+            { z: 'Z2', teto: 0.7426, uso: 'Recuperação ativa entre tiros' },
+            { z: 'Z3', teto: 0.797,  uso: 'Sessão contínua moderada' },
+            { z: 'Z4', teto: 0.851,  uso: 'Intervalados — limiar' },
+            { z: 'Z5', teto: 1.000,  uso: 'Intervalados — potência aeróbica' }
+        ];
+
+        function calcZonas(fcMax) {
+            const tetos = ZONE_PCT.slice(0, 4).map(p => Math.round(fcMax * p.teto));
+            return ZONE_PCT.map((p, i) => {
+                let faixa;
+                if (i === 0) faixa = `< ${tetos[0] + 1}`;
+                else if (i === 4) faixa = `${tetos[3] + 1}+`;
+                else faixa = `${tetos[i - 1] + 1}–${tetos[i]}`;
+                return { zona: p.z, faixa, uso: p.uso };
+            });
+        }
+
+        // --- Montagem do cronograma ---
+        function buildRunPlan(manterEdicoes) {
+            const el = id => document.getElementById(id);
+            const hint = el('runHint');
+            const nome = (el('runName').value || '').trim();
+            const idade = Number(el('runAge').value);
+            const sexo = el('runSex').value;
+
+            if (!nome || !idade) {
+                hint.textContent = 'Preencha o nome e a idade.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            const vo2 = calcVO2Atual();
+            if (vo2 === null || !isFinite(vo2) || vo2 <= 0) {
+                hint.textContent = 'Preencha os dados do teste.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            const fcMax = el('runHrSource').value === 'medida' && Number(el('runHrMax').value)
+                ? Number(el('runHrMax').value)
+                : fcMaxTanaka(idade);
+
+            const semanas = Number(el('runWeeks').value);
+            const freq = Number(el('runFreq').value);
+            const base = Number(el('runBaseMin').value) || 20;
+            const prog = Number(el('runProgress').value) / 100;
+            const deload = el('runDeload').checked;
+
+            const linhas = [];
+            // volBase segue progredindo por baixo: a descarga reduz a semana, nao o programa
+            let volBase = base;
+            let trabalhoAnterior = 0;
+            for (let w = 1; w <= semanas; w++) {
+                const ehDeload = deload && w % 4 === 0;
+                if (w > 1) volBase = Math.round(volBase * (1 + prog));
+                const volA = ehDeload ? Math.round(volBase * 0.7) : volBase;
+
+                // Sessão A — contínua em Z3
+                const sessaoA = `5 min aquec. Z1 + <b>${volA} min Z3</b> + 5 min desaq. Z1`;
+                const totalA = volA + 10;
+
+                // Sessão B — intervalada; blocos crescem e a intensidade sobe na 2ª metade
+                const metadeFinal = w > semanas / 2;
+                const zonaTiro = metadeFinal ? 'Z4–Z5' : 'Z4';
+                const durTiro = Math.min(6, 2 + Math.floor((w - 1) / 3));
+                const durRec = Math.max(2, Math.round(durTiro / 2));
+                const bloco = durTiro + durRec;
+                let reps = Math.max(3, Math.round((volA * 0.85) / bloco));
+                // garante que o volume de tiros realmente sobe semana a semana (exceto na descarga)
+                if (!ehDeload && w > 1 && reps * bloco <= trabalhoAnterior) {
+                    reps = Math.max(reps + 1, Math.floor(trabalhoAnterior / bloco) + 1);
+                }
+                const trabalho = reps * bloco;
+                trabalhoAnterior = ehDeload ? trabalhoAnterior : trabalho;
+                const sessaoB = `5 min aquec. Z1 + <b>${reps}× (${durTiro} min ${zonaTiro} / ${durRec} min Z2)</b> = ${trabalho} min + 5 min desaq.`;
+                const totalB = trabalho + 10;
+
+                // Sessões extras, se a frequência for maior que 2
+                const extras = [];
+                for (let k = 3; k <= freq; k++) {
+                    const volExtra = Math.round(volA * (k === 3 ? 0.8 : 0.6));
+                    extras.push(`5 min Z1 + <b>${volExtra} min Z2</b> (regenerativo) + 5 min Z1 — Total: ${volExtra + 10} min`);
+                }
+
+                linhas.push({
+                    semana: w,
+                    deload: ehDeload,
+                    sessaoA, totalA,
+                    sessaoB, totalB,
+                    extras,
+                    volumeSemana: totalA + totalB + extras.reduce((acc, _, i) => acc + Math.round(volA * (i === 0 ? 0.8 : 0.6)) + 10, 0)
+                });
+            }
+
+            const zonasAnteriores = manterEdicoes && runPlan ? runPlan.zonas : null;
+
+            runPlan = {
+                nome, idade, sexo, vo2: +vo2.toFixed(1),
+                classificacao: classificaVO2(vo2, idade, sexo),
+                fcMax,
+                fcMaxOrigem: el('runHrSource').value === 'medida' && Number(el('runHrMax').value) ? 'medida' : 'Tanaka',
+                teste: el('runTest').value,
+                semanas, freq, base, prog: prog * 100, deload,
+                zonas: zonasAnteriores || calcZonas(fcMax),
+                linhas
+            };
+
+            renderRunReview();
+            el('runStep1').style.display = 'none';
+            el('runStep2').style.display = '';
+            hint.textContent = ''; hint.className = 'save-hint';
+        }
+
+        function calcVO2Atual() {
+            const el = id => document.getElementById(id);
+            const tipo = el('runTest').value;
+            if (tipo === 'cooper') {
+                const m = Number((el('runCooperDist') || {}).value);
+                return m ? vo2Cooper(m) : null;
+            }
+            if (tipo === 'milha') {
+                const peso = Number((el('runWeight') || {}).value);
+                const tempo = Number((el('runMileTime') || {}).value);
+                const fc = Number((el('runMileHr') || {}).value);
+                const idade = Number(el('runAge').value);
+                if (!peso || !tempo || !fc || !idade) return null;
+                return vo2Milha(peso, idade, el('runSex').value === 'M', tempo, fc);
+            }
+            const v = Number((el('runVo2') || {}).value);
+            return v || null;
+        }
+
+        function onRunTestChange() {
+            const tipo = document.getElementById('runTest').value;
+            const box = document.getElementById('runTestFields');
+            if (tipo === 'cooper') {
+                box.innerHTML = `
+                    <div class="form-group">
+                        <label>Distância percorrida em 12 minutos (metros)</label>
+                        <input type="number" id="runCooperDist" min="500" max="6000" placeholder="Ex: 2100" oninput="updateRunPreview()">
+                    </div>`;
+            } else if (tipo === 'milha') {
+                box.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Peso (kg)</label>
+                            <input type="number" id="runWeight" min="30" max="200" step="0.1" placeholder="Ex: 78" oninput="updateRunPreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Tempo da milha (minutos)</label>
+                            <input type="number" id="runMileTime" min="5" max="30" step="0.01" placeholder="Ex: 13.5" oninput="updateRunPreview()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>FC ao final do teste (bpm)</label>
+                        <input type="number" id="runMileHr" min="80" max="220" placeholder="Ex: 145" oninput="updateRunPreview()">
+                    </div>`;
+            } else {
+                box.innerHTML = `
+                    <div class="form-group">
+                        <label>VO₂máx (ml/kg/min)</label>
+                        <input type="number" id="runVo2" min="10" max="90" step="0.1" placeholder="Ex: 35.7" oninput="updateRunPreview()">
+                    </div>`;
+            }
+            updateRunPreview();
+        }
+
+        function updateRunPreview() {
+            const el = id => document.getElementById(id);
+            const box = el('runResult');
+            if (!box) return;
+            const idade = Number(el('runAge').value);
+            const sexo = el('runSex').value;
+            const vo2 = calcVO2Atual();
+
+            if (!vo2 || !idade) { box.innerHTML = ''; return; }
+
+            const cls = classificaVO2(vo2, idade, sexo);
+            const fcMax = el('runHrSource').value === 'medida' && Number(el('runHrMax').value)
+                ? Number(el('runHrMax').value) : fcMaxTanaka(idade);
+
+            box.innerHTML = `
+                <div class="run-result-grid">
+                    <div><span>VO₂máx</span><strong>${vo2.toFixed(1).replace('.', ',')}</strong><small>ml/kg/min</small></div>
+                    <div><span>Classificação ACSM</span><strong>${cls}</strong><small>${idade} anos · ${sexo === 'F' ? 'feminino' : 'masculino'}</small></div>
+                    <div><span>FC máxima</span><strong>${fcMax}</strong><small>bpm · ${el('runHrSource').value === 'medida' && Number(el('runHrMax').value) ? 'medida' : 'Tanaka'}</small></div>
+                </div>`;
+        }
+
+        function onRunClientChange() {
+            const id = document.getElementById('runClient').value;
+            const c = (data.clients || []).find(x => x.id === id);
+            if (c) document.getElementById('runName').value = c.name;
+        }
+
+        function openRunPlanner() {
+            const sel = document.getElementById('runClient');
+            sel.innerHTML = '<option value="">Sem vincular</option>' +
+                (data.clients || []).slice().sort((a, b) => a.name.localeCompare(b.name))
+                    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (selectedClientId) {
+                sel.value = selectedClientId;
+                onRunClientChange();
+            }
+            document.getElementById('runStep1').style.display = '';
+            document.getElementById('runStep2').style.display = 'none';
+            onRunTestChange();
+            document.getElementById('runPlannerModal').classList.add('active');
+        }
+
+        function backToRunStep1() {
+            document.getElementById('runStep1').style.display = '';
+            document.getElementById('runStep2').style.display = 'none';
+        }
+
+        // --- Revisão editável ---
+        function renderRunReview() {
+            const P = runPlan;
+            document.getElementById('runSummary').innerHTML = `
+                <div class="run-result-grid">
+                    <div><span>Atleta</span><strong>${P.nome}</strong><small>${P.idade} anos</small></div>
+                    <div><span>VO₂máx</span><strong>${String(P.vo2).replace('.', ',')}</strong><small>${P.classificacao}</small></div>
+                    <div><span>FC máxima</span><strong>${P.fcMax} bpm</strong><small>${P.fcMaxOrigem}</small></div>
+                    <div><span>Programa</span><strong>${P.semanas} semanas</strong><small>${P.freq}x/semana · +${P.prog}%/sem</small></div>
+                </div>`;
+
+            document.getElementById('runZonesTable').innerHTML = `
+                <thead><tr><th>Zona</th><th>Faixa (bpm)</th><th>Uso no cronograma</th></tr></thead>
+                <tbody>
+                    ${P.zonas.map((z, i) => `
+                        <tr>
+                            <td><span class="zone-dot z${i + 1}"></span>${z.zona}</td>
+                            <td contenteditable="true" class="cell-edit" oninput="editZona(${i}, 'faixa', this.textContent)">${z.faixa}</td>
+                            <td contenteditable="true" class="cell-edit" oninput="editZona(${i}, 'uso', this.textContent)">${z.uso}</td>
+                        </tr>`).join('')}
+                </tbody>`;
+
+            const temExtras = P.linhas.some(l => l.extras.length);
+            document.getElementById('runPlanTable').innerHTML = `
+                <thead><tr>
+                    <th style="width:64px;">Sem.</th>
+                    <th>Sessão A — contínua</th>
+                    <th>Sessão B — intervalada</th>
+                    ${temExtras ? '<th>Sessões complementares</th>' : ''}
+                </tr></thead>
+                <tbody>
+                    ${P.linhas.map((l, i) => `
+                        <tr${l.deload ? ' class="row-deload"' : ''}>
+                            <td><strong>${l.semana}</strong>${l.deload ? '<br><small style="color:var(--text-muted);">descarga</small>' : ''}</td>
+                            <td contenteditable="true" class="cell-edit" oninput="editLinha(${i}, 'sessaoA', this.innerHTML)">${l.sessaoA}</td>
+                            <td contenteditable="true" class="cell-edit" oninput="editLinha(${i}, 'sessaoB', this.innerHTML)">${l.sessaoB}</td>
+                            ${temExtras ? `<td contenteditable="true" class="cell-edit" oninput="editExtras(${i}, this.innerHTML)">${l.extras.join('<br>') || '—'}</td>` : ''}
+                        </tr>`).join('')}
+                </tbody>`;
+
+            const obs = [];
+            if (P.freq < 3) obs.push('Frequência abaixo do mínimo do ACSM (3–5x/semana) para ganho ótimo de capacidade cardiorrespiratória — o volume por sessão foi ajustado para compensar.');
+            obs.push(`Progressão de ${P.prog}% por semana no volume, dentro da faixa de 5–10% recomendada na literatura.`);
+            obs.push(`Zonas calibradas sobre FC máxima de ${P.fcMax} bpm (${P.fcMaxOrigem}).`);
+            if (P.deload) obs.push('Semana de descarregamento a cada 4 semanas, com redução de 30% do volume.');
+            document.getElementById('runNotes').value = obs.join('\n');
+        }
+
+        function editZona(i, campo, valor) { runPlan.zonas[i][campo] = valor.trim(); }
+        function editLinha(i, campo, valor) { runPlan.linhas[i][campo] = valor; }
+        function editExtras(i, valor) { runPlan.linhas[i].extras = valor.split(/<br\s*\/?>/i).filter(x => x.trim() && x.trim() !== '—'); }
+
+        // --- PDF do cronograma (mesmo layout do modelo impresso) ---
+        function runPlanHTML() {
+            const P = runPlan;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            const temExtras = P.linhas.some(l => l.extras && l.extras.length);
+            const obs = (document.getElementById('runNotes').value || '')
+                .split('\n').map(x => x.trim()).filter(Boolean);
+
+            return `
+            <div style="font-family: Helvetica, Arial, sans-serif; color:#1a1a1a; background:#ffffff; width:100%; padding:0 0 8mm 0;">
+
+                <div style="background:#1a1a1a; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="color:#d4af37; font-size:15px; font-weight:700; letter-spacing:1.6px;">PAULO MEIRA TREINADOR</div>
+                    <div style="border:1px solid #d4af37; color:#d4af37; font-size:9px; letter-spacing:1.4px; padding:4px 10px;">CRONOGRAMA DE TREINO</div>
+                </div>
+
+                <div style="padding:16px 18px 0 18px;">
+                    <div style="font-size:9px; letter-spacing:2px; color:#8a7a3c; font-weight:700;">PROGRAMA AERÓBICO · POR TEMPO</div>
+                    <div style="font-size:21px; font-weight:700; margin:6px 0 2px;">${P.nome}</div>
+                    <div style="font-size:10.5px; color:#555;">
+                        ${P.semanas} semanas &nbsp;·&nbsp; ${P.freq}x por semana &nbsp;·&nbsp;
+                        VO₂máx ${String(P.vo2).replace('.', ',')} ml/kg/min &nbsp;·&nbsp; <b>${P.classificacao}</b>
+                        &nbsp;·&nbsp; FC máx ${P.fcMax} bpm
+                    </div>
+                    <div style="height:2px; background:#d4af37; width:64px; margin:12px 0 0;"></div>
+                </div>
+
+                <div style="padding:18px 18px 0 18px;">
+                    <div style="font-size:10px; letter-spacing:1.6px; font-weight:700; color:#1a1a1a; margin-bottom:8px;">ZONAS DE FREQUÊNCIA CARDÍACA</div>
+                    <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                        <thead>
+                            <tr style="background:#1a1a1a; color:#d4af37;">
+                                <th style="text-align:left; padding:7px 9px; width:56px; font-weight:600;">Zona</th>
+                                <th style="text-align:left; padding:7px 9px; width:100px; font-weight:600;">Faixa (bpm)</th>
+                                <th style="text-align:left; padding:7px 9px; font-weight:600;">Uso no cronograma</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${P.zonas.map((z, i) => `
+                                <tr style="background:${i % 2 ? '#f6f4ee' : '#ffffff'};">
+                                    <td style="padding:6px 9px; border-bottom:1px solid #e3e0d6; font-weight:700;">${z.zona}</td>
+                                    <td style="padding:6px 9px; border-bottom:1px solid #e3e0d6;">${z.faixa}</td>
+                                    <td style="padding:6px 9px; border-bottom:1px solid #e3e0d6; color:#444;">${z.uso}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="padding:18px 18px 0 18px;">
+                    <div style="font-size:10px; letter-spacing:1.6px; font-weight:700; margin-bottom:8px;">CRONOGRAMA</div>
+                    <table style="width:100%; border-collapse:collapse; font-size:9.5px; table-layout:fixed;">
+                        <thead>
+                            <tr style="background:#1a1a1a; color:#d4af37;">
+                                <th style="text-align:left; padding:7px 9px; width:38px; font-weight:600;">SEM.</th>
+                                <th style="text-align:left; padding:7px 9px; font-weight:600;">SESSÃO A — CONTÍNUA</th>
+                                <th style="text-align:left; padding:7px 9px; font-weight:600;">SESSÃO B — INTERVALADA</th>
+                                ${temExtras ? '<th style="text-align:left; padding:7px 9px; font-weight:600;">COMPLEMENTARES</th>' : ''}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${P.linhas.map((l, i) => `
+                                <tr style="background:${l.deload ? '#f3ede0' : (i % 2 ? '#f6f4ee' : '#ffffff')};">
+                                    <td style="padding:7px 9px; border-bottom:1px solid #e3e0d6; font-weight:700; vertical-align:top;">
+                                        ${l.semana}${l.deload ? '<div style="font-size:7.5px; font-weight:400; color:#8a7a3c; letter-spacing:.6px;">DESCARGA</div>' : ''}
+                                    </td>
+                                    <td style="padding:7px 9px; border-bottom:1px solid #e3e0d6; vertical-align:top; line-height:1.45;">${l.sessaoA}</td>
+                                    <td style="padding:7px 9px; border-bottom:1px solid #e3e0d6; vertical-align:top; line-height:1.45;">${l.sessaoB}</td>
+                                    ${temExtras ? `<td style="padding:7px 9px; border-bottom:1px solid #e3e0d6; vertical-align:top; line-height:1.45;">${(l.extras || []).join('<br>') || '—'}</td>` : ''}
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                ${obs.length ? `
+                <div style="margin:18px 18px 0 18px; background:#f6f4ee; border-left:3px solid #d4af37; padding:11px 13px;">
+                    <div style="font-size:9px; letter-spacing:1.6px; font-weight:700; margin-bottom:6px;">OBSERVAÇÕES</div>
+                    ${obs.map(o => `<div style="font-size:9.5px; color:#444; line-height:1.55; margin-bottom:3px;">• ${o}</div>`).join('')}
+                </div>` : ''}
+
+                <div style="margin:20px 18px 0 18px; border-top:1px solid #ddd; padding-top:8px; display:flex; justify-content:space-between; font-size:8px; color:#888; letter-spacing:.5px;">
+                    <span>PAULO MEIRA TREINADOR · LOADSTRAT BOARD</span>
+                    <span>Emitido em ${hoje}</span>
+                </div>
+            </div>`;
+        }
+
+        function generateRunPDF() {
+            if (!runPlan) { alert('Gere o cronograma antes de exportar.'); return; }
+            const el = document.createElement('div');
+            el.innerHTML = runPlanHTML();
+            const slug = runPlan.nome.trim().replace(/\s+/g, '_').replace(/[^\w_-]/g, '');
+            html2pdf().set({
+                margin: [8, 6, 10, 6],
+                filename: `Cronograma_${slug}_${runPlan.semanas}_semanas.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            }).from(el).save();
+        }
+
+        // Salva o cronograma como sessões na periodização do cliente
+        function saveRunPlanToClient() {
+            if (!runPlan) return;
+            const clientId = document.getElementById('runClient').value;
+            if (!clientId) { alert('Vincule o cronograma a um cliente para salvar na periodização.'); return; }
+            const c = (data.clients || []).find(x => x.id === clientId);
+            if (!c) return;
+            if (!c.modalities) c.modalities = [];
+            if (!c.modalities.includes('Corrida')) c.modalities.push('Corrida');
+            c.runPlan = {
+                geradoEm: new Date().toISOString(),
+                vo2: runPlan.vo2, classificacao: runPlan.classificacao, fcMax: runPlan.fcMax,
+                semanas: runPlan.semanas, freq: runPlan.freq, prog: runPlan.prog,
+                zonas: runPlan.zonas, linhas: runPlan.linhas,
+                notas: document.getElementById('runNotes').value || ''
+            };
+            saveData();
+            renderClientsTab();
+            alert(`Cronograma de ${runPlan.semanas} semanas salvo no perfil de ${c.name}.`);
+        }
+
+
+        // ============================================
+        // ASSISTENTE DE AGENDA
+        // Lê a agenda fixa + exceções da semana e devolve conflitos,
+        // janelas ociosas, oportunidades de encaixe e leitura de carga.
+        // Regras determinísticas — nada é inventado.
+        // ============================================
+
+        const AI_SEV = {
+            critico: { rank: 0, cls: 'critical', icon: '▲', label: 'Conflito' },
+            atencao: { rank: 1, cls: 'warning',  icon: '!',  label: 'Atenção' },
+            dica:    { rank: 2, cls: 'good',     icon: '✓',  label: 'Oportunidade' },
+            info:    { rank: 3, cls: 'neutral',  icon: '·',  label: 'Leitura' }
+        };
+
+        function toMin(t) {
+            const [h, m] = String(t || '00:00').split(':').map(Number);
+            return (h || 0) * 60 + (m || 0);
+        }
+        function fromMin(v) {
+            const h = Math.floor(v / 60), m = v % 60;
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        // Duração assumida por atendimento, em minutos
+        const SESSION_MIN = 60;
+
+        function plannerInsights() {
+            const out = [];
+            const semana = DAY_ORDER.map(day => ({ day, evs: agendaOfDay(day) }));
+            const totalAtend = semana.reduce((n, d) => n + d.evs.filter(e => e.kind === 'cliente').length, 0);
+
+            if (totalAtend === 0) {
+                return [{ sev: 'info', titulo: 'Agenda vazia',
+                    texto: 'Nenhum atendimento fixo cadastrado ainda. Cadastre os horários dos clientes para o assistente analisar sua semana.' }];
+            }
+
+            // ---- 1. Conflitos: dois compromissos no mesmo horário ----
+            semana.forEach(({ day, evs }) => {
+                const porHora = {};
+                evs.forEach(e => { (porHora[e.time] = porHora[e.time] || []).push(e); });
+                Object.entries(porHora).forEach(([hora, itens]) => {
+                    if (itens.length < 2) return;
+                    const nomes = itens.map(e => e.kind === 'cliente' ? e.client.name : e.commitment.title);
+                    out.push({ sev: 'critico', titulo: `${DAYS[day]} às ${hora} — ${itens.length} compromissos sobrepostos`,
+                        texto: `${nomes.join(' · ')}. Remarque um deles ou confirme se é atendimento em dupla.`,
+                        acao: { label: 'Abrir ' + DAYS[day], fn: `focusPlannerDay('${day}')` } });
+                });
+            });
+
+            // ---- 2. Buracos: janelas ociosas entre atendimentos no mesmo turno ----
+            semana.forEach(({ day, evs }) => {
+                const horas = evs.map(e => toMin(e.time)).sort((a, b) => a - b);
+                let ocio = 0; const janelas = [];
+                for (let i = 1; i < horas.length; i++) {
+                    const gap = horas[i] - (horas[i - 1] + SESSION_MIN);
+                    if (gap >= 60 && gap <= 240) { ocio += gap; janelas.push(`${fromMin(horas[i - 1] + SESSION_MIN)}–${fromMin(horas[i])}`); }
+                }
+                if (ocio >= 120) {
+                    out.push({ sev: 'atencao', titulo: `${DAYS[day]} — ${(ocio / 60).toFixed(1).replace('.', ',')}h de janela ociosa`,
+                        texto: `Vaga${janelas.length > 1 ? 's' : ''} em ${janelas.join(', ')}. Encaixar um cliente aqui ou compactar o dia libera o resto da agenda.`,
+                        acao: { label: 'Encaixar nesse dia', fn: `openPlannerAdd('${day}')` } });
+                }
+            });
+
+            // ---- 3. Dias sobrecarregados e dias livres ----
+            const carga = semana.map(d => ({ day: d.day, n: d.evs.length }));
+            const maxDia = carga.reduce((a, b) => b.n > a.n ? b : a, carga[0]);
+            const livres = carga.filter(d => d.n === 0).map(d => DAYS[d.day]);
+            const uteis = carga.filter(d => d.day !== 'sabado' && d.day !== 'domingo');
+            const mediaUtil = uteis.reduce((s, d) => s + d.n, 0) / uteis.length;
+
+            if (maxDia.n >= 7) {
+                out.push({ sev: 'atencao', titulo: `${DAYS[maxDia.day]} concentra ${maxDia.n} compromissos`,
+                    texto: `A média dos dias úteis é ${mediaUtil.toFixed(1).replace('.', ',')}. Mover 1 ou 2 atendimentos para um dia mais leve reduz o risco de atraso em cadeia.` });
+            }
+            if (livres.length && totalAtend >= 8) {
+                out.push({ sev: 'dica', titulo: `${livres.length} dia(s) sem nenhum atendimento`,
+                    texto: `${livres.join(', ')} ${livres.length > 1 ? 'estão livres' : 'está livre'}. Se quiser abrir vagas sem esticar os dias cheios, é aí que cabe.` });
+            }
+
+            // ---- 4. Primeiro e último horário: amplitude do dia ----
+            semana.forEach(({ day, evs }) => {
+                if (evs.length < 2) return;
+                const horas = evs.map(e => toMin(e.time));
+                const amplitude = (Math.max(...horas) + SESSION_MIN - Math.min(...horas)) / 60;
+                if (amplitude >= 11) {
+                    out.push({ sev: 'atencao', titulo: `${DAYS[day]} — jornada de ${amplitude.toFixed(1).replace('.', ',')}h de ponta a ponta`,
+                        texto: `De ${fromMin(Math.min(...horas))} a ${fromMin(Math.max(...horas) + SESSION_MIN)} com apenas ${evs.length} compromissos. Agrupar em blocos encurta o dia.`,
+                        acao: { label: 'Abrir ' + DAYS[day], fn: `focusPlannerDay('${day}')` } });
+                }
+            });
+
+            // ---- 5. Turno mais requisitado ----
+            const porTurno = {};
+            SHIFTS.forEach(s => porTurno[s.key] = 0);
+            semana.forEach(({ evs }) => evs.forEach(e => porTurno[shiftOf(e.time)]++));
+            const turnoTop = SHIFTS.reduce((a, s) => porTurno[s.key] > porTurno[a.key] ? s : a, SHIFTS[0]);
+            const pct = Math.round(porTurno[turnoTop.key] / (totalAtend || 1) * 100);
+            if (pct >= 60) {
+                out.push({ sev: 'info', titulo: `${pct}% da agenda está na ${turnoTop.label.toLowerCase()}`,
+                    texto: `${porTurno[turnoTop.key]} de ${totalAtend} compromissos. É seu horário nobre — precifique-o de acordo e ofereça os outros turnos com desconto se quiser preencher.` });
+            }
+
+            // ---- 6. Clientes sem horário fixo ----
+            const semHorario = (data.clients || [])
+                .filter(c => !c.inativo && CLIENT_TYPES[clientType(c)]?.agenda)
+                .filter(c => !(c.schedule || []).length && !c.day);
+            if (semHorario.length) {
+                out.push({ sev: 'atencao', titulo: `${semHorario.length} cliente(s) presencial/online sem horário no planner`,
+                    texto: semHorario.slice(0, 6).map(c => c.name).join(', ') + (semHorario.length > 6 ? ` e mais ${semHorario.length - 6}` : '') + '. Sem horário, eles não aparecem na agenda nem nos próximos atendimentos.',
+                    acao: { label: 'Ir para Clientes', fn: `switchTab('clientes')` } });
+            }
+
+            // ---- 7. Exceções abertas nesta semana ----
+            const exs = exceptionsThisWeek();
+            if (exs.length) {
+                const canc = exs.filter(e => e.type === 'cancel').length;
+                const extra = exs.filter(e => e.type === 'extra').length;
+                out.push({ sev: 'info', titulo: `${exs.length} alteração(ões) válida(s) só nesta semana`,
+                    texto: `${canc} cancelamento(s) e ${extra} encaixe(s). Na segunda-feira a agenda fixa volta sozinha — se alguma mudança é permanente, edite o cliente.` });
+            }
+
+            // ---- 8. Leitura de carga dos atletas agendados ----
+            const risco = (data.clients || []).map(c => {
+                const ss = (data.sessions || []).filter(s => s.clientId === c.id);
+                if (!ss.length) return null;
+                const a = acuteChronic(ss);
+                return { c, ratio: a.ratio, st: acwrStatus(a.ratio) };
+            }).filter(x => x && (x.st.cls === 'critical' || x.st.cls === 'warning'));
+
+            const riscoNaSemana = risco.filter(r =>
+                semana.some(d => d.evs.some(e => e.kind === 'cliente' && e.client.id === r.c.id)));
+
+            if (riscoNaSemana.length) {
+                out.push({ sev: 'critico', titulo: `${riscoNaSemana.length} atleta(s) agendado(s) fora da zona ideal de carga`,
+                    texto: riscoNaSemana.slice(0, 5).map(r =>
+                        `${r.c.name} (A:C ${r.ratio === null ? '—' : r.ratio.toFixed(2).replace('.', ',')} · ${r.st.label.toLowerCase()})`).join(' · ')
+                        + '. Considere reduzir volume ou intensidade nessas sessões.',
+                    acao: { label: 'Ver dashboard', fn: `switchTab('dashboard')` } });
+            }
+
+            // ---- 9. Balanço final ----
+            const horasSemana = (totalAtend * SESSION_MIN) / 60;
+            out.push({ sev: 'info', titulo: `${totalAtend} atendimentos · ~${horasSemana.toFixed(1).replace('.', ',')}h de trabalho direto`,
+                texto: `Média de ${(totalAtend / 7).toFixed(1).replace('.', ',')} por dia. ${
+                    livres.length ? `Dias livres: ${livres.join(', ')}.` : 'Nenhum dia totalmente livre nesta semana.'
+                }` });
+
+            return out.sort((a, b) => AI_SEV[a.sev].rank - AI_SEV[b.sev].rank);
+        }
+
+        function focusPlannerDay(day) {
+            closeModal('plannerAiModal');
+            plannerView = 'semana';
+            renderPlanner();
+            const idx = DAY_ORDER.indexOf(day);
+            const col = document.querySelectorAll('.planner-day')[idx];
+            if (col) {
+                col.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                col.classList.add('day-focus');
+                setTimeout(() => col.classList.remove('day-focus'), 2200);
+            }
+        }
+
+        function openPlannerAi() {
+            const itens = plannerInsights();
+            const conta = k => itens.filter(i => i.sev === k).length;
+
+            document.getElementById('plannerAiBody').innerHTML = `
+                <div class="ai-score">
+                    ${['critico', 'atencao', 'dica'].map(k => `
+                        <div class="ai-score-box ${AI_SEV[k].cls}">
+                            <div class="ai-score-num">${conta(k)}</div>
+                            <div class="ai-score-lbl">${AI_SEV[k].label}${conta(k) === 1 ? '' : 's'}</div>
+                        </div>`).join('')}
+                </div>
+                ${itens.map(i => `
+                    <div class="ai-item ${AI_SEV[i.sev].cls}">
+                        <div class="ai-item-head">
+                            <span class="ai-badge ${AI_SEV[i.sev].cls}">${AI_SEV[i.sev].icon}</span>
+                            <span class="ai-item-title">${i.titulo}</span>
+                        </div>
+                        <div class="ai-item-text">${i.texto}</div>
+                        ${i.acao ? `<button class="chart-toggle ai-item-btn" onclick="${i.acao.fn}">${i.acao.label} →</button>` : ''}
+                    </div>`).join('')}`;
+
+            document.getElementById('plannerAiModal').classList.add('active');
         }
 
         // ============================================
