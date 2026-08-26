@@ -1706,9 +1706,12 @@
             padding: 2px 6px;
             font-weight: 600;
         }
-        .fin-tag.rec { background: rgba(212,175,55,0.18); color: var(--primary); }
-        .fin-tag.due { background: rgba(235,166,64,0.18); color: #eba640; }
-        .fin-tag.off { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+        /* Ciclo e parcela são contornadas; "em aberto" é preenchida —
+           a diferença de forma separa as etiquetas mesmo com daltonismo */
+        .fin-tag.rec  { background: transparent; border: 1px solid rgba(212,175,55,0.55); color: var(--primary); }
+        .fin-tag.parc { background: transparent; border: 1px solid rgba(126,163,247,0.55); color: #7ea3f7; }
+        .fin-tag.due  { background: #eba640; color: #12100c; }
+        .fin-tag.off  { background: transparent; border: 1px solid rgba(255,255,255,0.22); color: var(--text-muted); }
         .fin-pend-head {
             display: flex;
             gap: 22px;
@@ -2590,38 +2593,75 @@
                 <div class="modal-title" id="expenseModalTitle">Nova despesa</div>
                 <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
             </div>
+
+            <div class="form-group">
+                <label>Tipo de despesa</label>
+                <select id="expenseKind" onchange="onExpenseKindChange()">
+                    <option value="avulsa">Avulsa — gasto único</option>
+                    <option value="recorrente">Recorrente — se repete a cada ciclo, sem fim</option>
+                    <option value="parcelada">Parcelada — compra dividida em N vezes</option>
+                </select>
+            </div>
+
             <div class="form-group">
                 <label>Descrição</label>
                 <input type="text" id="expenseDesc" placeholder="Ex: Aluguel da sala">
             </div>
+
+            <div class="form-group">
+                <label>Categoria</label>
+                <select id="expenseCategory" onchange="onExpenseCategoryChange()"></select>
+                <div id="expenseNewCatBox" style="display:none; margin-top:9px;">
+                    <div class="ai-ask-row">
+                        <input type="text" id="expenseNewCat" placeholder="Nome da nova categoria" onkeydown="expenseNewCatKey(event)">
+                        <button class="btn-secondary" onclick="addExpenseCategory()">Adicionar</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
-                    <label>Valor (R$)</label>
-                    <input type="number" id="expenseAmount" step="0.01" min="0" placeholder="0,00">
+                    <label id="expenseAmountLabel">Valor (R$)</label>
+                    <input type="number" id="expenseAmount" step="0.01" min="0" placeholder="0,00" oninput="updateExpensePreview()">
                 </div>
                 <div class="form-group">
-                    <label>Categoria</label>
-                    <select id="expenseCategory"></select>
+                    <label id="expenseDateLabel">Data da despesa</label>
+                    <input type="date" id="expenseDate" onchange="updateExpensePreview()">
                 </div>
             </div>
-            <div class="form-group">
-                <label id="expenseDateLabel">Data da despesa</label>
-                <input type="date" id="expenseDate">
+
+            <!-- PARCELADA -->
+            <div id="expenseParcelFields" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Número de parcelas</label>
+                        <input type="number" id="expenseParcels" min="2" max="60" value="12" oninput="updateExpensePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>O valor acima é</label>
+                        <select id="expenseAmountMode" onchange="updateExpensePreview()">
+                            <option value="parcela">Valor de cada parcela</option>
+                            <option value="total">Valor total da compra</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <label style="display:flex; align-items:center; gap:9px; margin-top:2px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
-                <input type="checkbox" id="expenseRecurring" onchange="toggleExpenseRecurring()" style="width:auto;">
-                Despesa recorrente — se repete a cada ciclo
-            </label>
-            <div id="expenseRecurringFields" style="display:none; margin-top:14px;">
+
+            <!-- RECORRENTE -->
+            <div id="expenseRecurringFields" style="display:none;">
                 <div class="form-group">
                     <label>Frequência</label>
-                    <select id="expenseCycle"></select>
+                    <select id="expenseCycle" onchange="updateExpensePreview()"></select>
                 </div>
-                <label style="display:flex; align-items:center; gap:9px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
-                    <input type="checkbox" id="expenseActive" checked style="width:auto;">
-                    Ativa — continua gerando lançamentos
-                </label>
             </div>
+
+            <label id="expenseActiveLabel" style="display:none; align-items:center; gap:9px; margin-top:4px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
+                <input type="checkbox" id="expenseActive" checked style="width:auto;">
+                Ativa — continua gerando lançamentos
+            </label>
+
+            <div class="run-result" id="expensePreview"></div>
+
             <div class="modal-footer">
                 <span id="expenseHint" class="save-hint"></span>
                 <button class="btn-secondary danger" id="expenseDelete" onclick="deleteExpense()">Excluir</button>
@@ -4772,6 +4812,7 @@
         function ensureFinanceData() {
             if (!Array.isArray(data.plans)) data.plans = [];
             if (!Array.isArray(data.expenses)) data.expenses = [];
+            if (!Array.isArray(data.expenseCategories)) data.expenseCategories = [];
             (data.transactions || []).forEach(t => { if (!t.kind) t.kind = 'receita'; });
         }
 
@@ -4799,17 +4840,37 @@
         // Períodos que já venceram e ainda não foram cobrados
         function pendenciasDoItem(item) {
             if (item.ativo === false) return [];
-            const meses = (CICLOS[item.ciclo] || CICLOS.mensal).meses;
+            if (item.tipo === 'avulsa') return [];   // gasto único não recorre
+            const parcelado = item.tipo === 'parcelada' && item.parcelas > 0;
+            const meses = parcelado ? 1 : (CICLOS[item.ciclo] || CICLOS.mensal).meses;
+            const limite = parcelado ? item.parcelas : 240;   // parcelada tem fim
             const pagos = item.pagos || [];
             const hoje = periodoAtual();
             const pend = [];
-            let p = (item.inicio || hoje).slice(0, 7);
-            let guard = 0;
-            while (p <= hoje && guard++ < 240) {
+            let p = (item.inicio || item.data || hoje).slice(0, 7);
+            let n = 0;
+            while (p <= hoje && n < limite) {
                 if (!pagos.includes(p)) pend.push(p);
                 p = somaPeriodo(p, meses);
+                n++;
             }
             return pend;
+        }
+
+        // Posição de um período dentro do item (1 = primeira parcela/ciclo)
+        function indiceParcela(item, periodo) {
+            const meses = (item.tipo === 'parcelada') ? 1 : (CICLOS[item.ciclo] || CICLOS.mensal).meses;
+            let p = (item.inicio || item.data || periodo).slice(0, 7), n = 1;
+            while (p < periodo && n < 400) { p = somaPeriodo(p, meses); n++; }
+            return n;
+        }
+
+        // Quanto ainda falta pagar de uma compra parcelada
+        function saldoParcelado(e) {
+            if (e.tipo !== 'parcelada' || !e.parcelas) return null;
+            const pagas = (e.pagos || []).length;
+            return { pagas, total: e.parcelas, restam: Math.max(0, e.parcelas - pagas),
+                     falta: Math.max(0, e.parcelas - pagas) * (Number(e.valor) || 0) };
         }
 
         // Receita recorrente normalizada por mês
@@ -4818,8 +4879,16 @@
                 .reduce((s, p) => s + (Number(p.valor) || 0) / (CICLOS[p.ciclo] || CICLOS.mensal).meses, 0);
         }
         function despesaRecorrenteMensal() {
-            return (data.expenses || []).filter(e => e.recorrente && e.ativo !== false)
+            return (data.expenses || []).filter(e => expenseKind(e) === 'recorrente' && e.ativo !== false)
                 .reduce((s, e) => s + (Number(e.valor) || 0) / (CICLOS[e.ciclo] || CICLOS.mensal).meses, 0);
+        }
+
+        // Parcelas que ainda pesam no mês — somem quando a compra termina
+        function parcelasMensais() {
+            return (data.expenses || [])
+                .filter(e => e.tipo === 'parcelada' && e.ativo !== false)
+                .filter(e => (saldoParcelado(e) || {}).restam > 0)
+                .reduce((s, e) => s + (Number(e.valor) || 0), 0);
         }
 
         // ---- Planos ----
@@ -4916,8 +4985,53 @@
             updateSyncStatus(`✓ ${c ? c.name : 'Cobrança'} · ${rotuloPeriodo(periodo)} registrada`);
         }
 
-        // ---- Despesas ----
+        // ---- Despesas: avulsa, recorrente ou parcelada ----
         let editingExpenseId = null;
+
+        // Categorias: as de fábrica + as que o usuário criar
+        function categoriasDespesa() {
+            ensureFinanceData();
+            const extras = (data.expenseCategories || []).filter(c => !CATEGORIAS_DESPESA.includes(c));
+            return [...CATEGORIAS_DESPESA.filter(c => c !== 'Outro'), ...extras.sort((a, b) => a.localeCompare(b)), 'Outro'];
+        }
+
+        function preencherCategorias(sel) {
+            const el = document.getElementById('expenseCategory');
+            el.innerHTML = categoriasDespesa().map(c => `<option value="${c}">${c}</option>`).join('') +
+                '<option value="__nova__">＋ Nova categoria…</option>';
+            el.value = categoriasDespesa().includes(sel) ? sel : categoriasDespesa()[0];
+        }
+
+        function onExpenseCategoryChange() {
+            const nova = document.getElementById('expenseCategory').value === '__nova__';
+            document.getElementById('expenseNewCatBox').style.display = nova ? '' : 'none';
+            if (nova) document.getElementById('expenseNewCat').focus();
+        }
+
+        function expenseNewCatKey(ev) {
+            if (ev.key === 'Enter') { ev.preventDefault(); addExpenseCategory(); }
+        }
+
+        function addExpenseCategory() {
+            ensureFinanceData();
+            const campo = document.getElementById('expenseNewCat');
+            const nome = (campo.value || '').trim();
+            const hint = document.getElementById('expenseHint');
+            if (!nome) { campo.focus(); return; }
+
+            const jaExiste = categoriasDespesa().some(c => c.toLowerCase() === nome.toLowerCase());
+            if (!jaExiste) {
+                data.expenseCategories = data.expenseCategories || [];
+                data.expenseCategories.push(nome);
+                saveData();
+            }
+            const oficial = categoriasDespesa().find(c => c.toLowerCase() === nome.toLowerCase());
+            campo.value = '';
+            document.getElementById('expenseNewCatBox').style.display = 'none';
+            preencherCategorias(oficial);
+            hint.textContent = jaExiste ? 'Essa categoria já existia — selecionada.' : `Categoria "${oficial}" criada.`;
+            hint.className = 'save-hint saved';
+        }
 
         function openExpenseModal(id) {
             ensureFinanceData();
@@ -4925,54 +5039,134 @@
             const e = id ? data.expenses.find(x => x.id === id) : null;
             document.getElementById('expenseModalTitle').textContent = e ? 'Editar despesa' : 'Nova despesa';
 
-            document.getElementById('expenseCategory').innerHTML =
-                CATEGORIAS_DESPESA.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('expenseCycle').innerHTML =
                 Object.entries(CICLOS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
 
+            const tipo = e ? expenseKind(e) : 'avulsa';
+            document.getElementById('expenseKind').value = tipo;
+            preencherCategorias(e ? e.categoria : null);
+            document.getElementById('expenseNewCatBox').style.display = 'none';
+            document.getElementById('expenseNewCat').value = '';
+
             document.getElementById('expenseDesc').value = e ? e.descricao : '';
             document.getElementById('expenseAmount').value = e ? e.valor : '';
-            document.getElementById('expenseCategory').value = e ? e.categoria : CATEGORIAS_DESPESA[0];
             document.getElementById('expenseDate').value = e ? (e.data || getTodayDate()) : getTodayDate();
-            document.getElementById('expenseRecurring').checked = e ? !!e.recorrente : false;
+            document.getElementById('expenseParcels').value = e && e.parcelas ? e.parcelas : 12;
+            document.getElementById('expenseAmountMode').value = 'parcela';
             document.getElementById('expenseCycle').value = e ? (e.ciclo || 'mensal') : 'mensal';
             document.getElementById('expenseActive').checked = e ? e.ativo !== false : true;
-            toggleExpenseRecurring();
+            onExpenseKindChange();
 
             const h = document.getElementById('expenseHint'); h.textContent = ''; h.className = 'save-hint';
             document.getElementById('expenseDelete').style.display = e ? '' : 'none';
             document.getElementById('expenseModal').classList.add('active');
         }
 
-        function toggleExpenseRecurring() {
-            const on = document.getElementById('expenseRecurring').checked;
-            document.getElementById('expenseRecurringFields').style.display = on ? '' : 'none';
-            const lbl = document.getElementById('expenseDateLabel');
-            if (lbl) lbl.textContent = on ? 'Início da recorrência' : 'Data da despesa';
+        // Tipo de uma despesa já salva (compatível com os registros antigos)
+        function expenseKind(e) {
+            if (e.tipo) return e.tipo;
+            return e.recorrente ? 'recorrente' : 'avulsa';
+        }
+
+        function onExpenseKindChange() {
+            const tipo = document.getElementById('expenseKind').value;
+            document.getElementById('expenseParcelFields').style.display = tipo === 'parcelada' ? '' : 'none';
+            document.getElementById('expenseRecurringFields').style.display = tipo === 'recorrente' ? '' : 'none';
+            const lblAtiva = document.getElementById('expenseActiveLabel');
+            lblAtiva.style.display = tipo === 'avulsa' ? 'none' : 'flex';
+            lblAtiva.lastChild.textContent = tipo === 'parcelada'
+                ? ' Ativa — continua gerando as parcelas até o fim'
+                : ' Ativa — continua gerando lançamentos';
+            document.getElementById('expenseDateLabel').textContent =
+                tipo === 'recorrente' ? 'Início da recorrência'
+                : tipo === 'parcelada' ? 'Mês da 1ª parcela'
+                : 'Data da despesa';
+            document.getElementById('expenseAmountLabel').textContent =
+                tipo === 'parcelada' ? 'Valor (R$)' : 'Valor (R$)';
+            updateExpensePreview();
+        }
+
+        // Mantido para compatibilidade com chamadas antigas
+        function toggleExpenseRecurring() { onExpenseKindChange(); }
+
+        // Valor de cada parcela a partir do que foi digitado
+        function valorDaParcela() {
+            const bruto = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            const n = Math.max(2, Number(document.getElementById('expenseParcels').value) || 2);
+            return document.getElementById('expenseAmountMode').value === 'total'
+                ? Math.round((bruto / n) * 100) / 100
+                : bruto;
+        }
+
+        function updateExpensePreview() {
+            const box = document.getElementById('expensePreview');
+            if (!box) return;
+            const tipo = document.getElementById('expenseKind').value;
+            const bruto = parseFloat(document.getElementById('expenseAmount').value) || 0;
+
+            if (!bruto) { box.innerHTML = ''; return; }
+
+            if (tipo === 'parcelada') {
+                const n = Math.max(2, Number(document.getElementById('expenseParcels').value) || 2);
+                const parcela = valorDaParcela();
+                const total = Math.round(parcela * n * 100) / 100;
+                const ini = document.getElementById('expenseDate').value || getTodayDate();
+                const fim = somaPeriodo(ini.slice(0, 7), n - 1);
+                box.innerHTML = `
+                    <div class="run-result-grid">
+                        <div><span>Parcela</span><strong>${brl(parcela)}</strong><small>por mês</small></div>
+                        <div><span>Total</span><strong>${brl(total)}</strong><small>em ${n}x</small></div>
+                        <div><span>Última parcela</span><strong>${rotuloPeriodo(fim)}</strong><small>depois disso, encerra</small></div>
+                    </div>`;
+            } else if (tipo === 'recorrente') {
+                const ciclo = document.getElementById('expenseCycle').value;
+                const meses = (CICLOS[ciclo] || CICLOS.mensal).meses;
+                box.innerHTML = `
+                    <div class="run-result-grid">
+                        <div><span>Por ciclo</span><strong>${brl(bruto)}</strong><small>a cada ${meses === 1 ? 'mês' : meses + ' meses'}</small></div>
+                        <div><span>Peso mensal</span><strong>${brl(bruto / meses)}</strong><small>entra nos custos fixos</small></div>
+                        <div><span>Por ano</span><strong>${brl(bruto * 12 / meses)}</strong><small>sem data de fim</small></div>
+                    </div>`;
+            } else {
+                box.innerHTML = '';
+            }
         }
 
         function saveExpense() {
             ensureFinanceData();
             const descricao = (document.getElementById('expenseDesc').value || '').trim();
-            const valor = parseFloat(document.getElementById('expenseAmount').value);
+            const tipo = document.getElementById('expenseKind').value;
             const hint = document.getElementById('expenseHint');
+            const cat = document.getElementById('expenseCategory').value;
 
+            if (cat === '__nova__') {
+                hint.textContent = 'Confirme a nova categoria antes de salvar.';
+                hint.className = 'save-hint error';
+                document.getElementById('expenseNewCat').focus();
+                return;
+            }
+
+            const valor = tipo === 'parcelada' ? valorDaParcela() : parseFloat(document.getElementById('expenseAmount').value);
             if (!descricao || !valor || valor <= 0) {
                 hint.textContent = 'Informe a descrição e um valor.';
                 hint.className = 'save-hint error';
                 return;
             }
 
-            const recorrente = document.getElementById('expenseRecurring').checked;
+            const parcelas = Math.max(2, Number(document.getElementById('expenseParcels').value) || 2);
             const campos = {
-                descricao, valor,
-                categoria: document.getElementById('expenseCategory').value,
+                descricao,
+                valor: Math.round(valor * 100) / 100,
+                categoria: cat,
                 data: document.getElementById('expenseDate').value || getTodayDate(),
-                recorrente,
-                ciclo: recorrente ? document.getElementById('expenseCycle').value : null,
-                ativo: document.getElementById('expenseActive').checked
+                tipo,
+                recorrente: tipo === 'recorrente',            // mantido para os dados antigos
+                ciclo: tipo === 'recorrente' ? document.getElementById('expenseCycle').value
+                     : tipo === 'parcelada' ? 'mensal' : null,
+                parcelas: tipo === 'parcelada' ? parcelas : null,
+                ativo: tipo === 'avulsa' ? true : document.getElementById('expenseActive').checked
             };
-            if (recorrente) campos.inicio = campos.data;
+            if (tipo !== 'avulsa') campos.inicio = campos.data;
 
             if (editingExpenseId) {
                 Object.assign(data.expenses.find(x => x.id === editingExpenseId), campos);
@@ -4980,10 +5174,10 @@
                 const nova = { id: 'ex_' + Date.now(), pagos: [], criadoEm: new Date().toISOString(), ...campos };
                 data.expenses.push(nova);
                 // despesa avulsa já entra como lançamento do dia
-                if (!recorrente) {
+                if (tipo === 'avulsa') {
                     data.transactions.push({
                         id: 't_' + Date.now(), kind: 'despesa', expenseId: nova.id,
-                        amount: valor, type: campos.categoria, descricao,
+                        amount: campos.valor, type: campos.categoria, descricao,
                         date: campos.data, createdAt: new Date().toISOString()
                     });
                 }
@@ -5007,8 +5201,10 @@
             if (!e) return;
             e.pagos = e.pagos || [];
             if (e.pagos.includes(periodo)) return;   // já pago neste ciclo
+            const idx = indiceParcela(e, periodo);
             data.transactions.push({
                 id: 't_' + Date.now(), kind: 'despesa', expenseId: expId, periodo,
+                parcela: idx, deParcelas: expenseKind(e) === 'parcelada' ? e.parcelas : null,
                 amount: Number(e.valor) || 0, type: e.categoria, descricao: e.descricao,
                 date: getTodayDate(), createdAt: new Date().toISOString()
             });
@@ -5035,7 +5231,8 @@
             const doMes = (data.transactions || []).filter(t => String(t.date).slice(0, 7) === mes);
             const receita = doMes.filter(t => t.kind !== 'despesa').reduce((s, t) => s + (Number(t.amount) || 0), 0);
             const despesa = doMes.filter(t => t.kind === 'despesa').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-            const rec = mrr(), desp = despesaRecorrenteMensal();
+            const rec = mrr(), fixas = despesaRecorrenteMensal(), parc = parcelasMensais();
+            const desp = fixas + parc;
 
             const set = (id, v, cls) => {
                 const el = document.getElementById(id);
@@ -5048,7 +5245,7 @@
             set('finExpense', brl(despesa));
             set('finBalance', brlSigned(receita - despesa), receita - despesa < 0 ? 'neg' : 'pos');
             set('finMRR', brl(rec));
-            set('finMRRSub', `menos ${brl(desp)} de custos fixos = ${brlSigned(rec - desp)} líquido`);
+            set('finMRRSub', `menos ${brl(desp)} de custos fixos${parc ? ' e parcelas' : ''} = ${brlSigned(rec - desp)} líquido`);
             const acumulado = (data.transactions || [])
                 .reduce((s, t) => s + (t.kind === 'despesa' ? -1 : 1) * (Number(t.amount) || 0), 0);
             set('finTotal', brlSigned(acumulado), acumulado < 0 ? 'neg' : '');
@@ -5094,23 +5291,39 @@
                 .sort((a, b) => (b.recorrente ? 1 : 0) - (a.recorrente ? 1 : 0) || String(b.data).localeCompare(String(a.data)));
 
             if (!list.length) {
-                el.innerHTML = '<div class="fin-empty">Nenhuma despesa lançada. Marque como recorrente o que se repete todo mês — aluguel, software, seguro.</div>';
+                el.innerHTML = '<div class="fin-empty">Nenhuma despesa lançada. Escolha <strong>recorrente</strong> para o que se repete todo mês (aluguel, software) ou <strong>parcelada</strong> para uma compra dividida em N vezes.</div>';
                 return;
             }
 
             el.innerHTML = list.slice(0, 30).map(e => {
-                const pend = e.recorrente ? pendenciasDoItem(e) : [];
+                const tipo = expenseKind(e);
+                const pend = tipo === 'avulsa' ? [] : pendenciasDoItem(e);
+                const sp = saldoParcelado(e);
+                const quitada = sp && sp.restam === 0;
+                const dataFmt = new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR');
+
+                const tag = tipo === 'recorrente'
+                    ? `<span class="fin-tag rec">${(CICLOS[e.ciclo] || CICLOS.mensal).label}</span>`
+                    : tipo === 'parcelada'
+                        ? `<span class="fin-tag parc">${sp.pagas}/${sp.total}x</span>` : '';
+
+                const sub = tipo === 'recorrente' ? `${e.categoria} · desde ${dataFmt}`
+                    : tipo === 'parcelada'
+                        ? (quitada
+                            ? `${e.categoria} · quitada · ${brl(Number(e.valor) * sp.total)} pagos`
+                            : `${e.categoria} · restam ${sp.restam} de ${sp.total} parcelas · ${brl(sp.falta)} a pagar`)
+                        : `${e.categoria} · ${dataFmt}`;
+
                 return `
-                    <div class="fin-row${e.ativo === false ? ' off' : ''}">
+                    <div class="fin-row${e.ativo === false || quitada ? ' off' : ''}">
                         <div class="fin-row-main">
                             <div class="fin-row-title">${e.descricao}
-                                ${e.recorrente ? `<span class="fin-tag rec">${(CICLOS[e.ciclo] || CICLOS.mensal).label}</span>` : ''}
+                                ${tag}
+                                ${quitada ? '<span class="fin-tag off">quitada</span>' : ''}
                                 ${e.ativo === false ? '<span class="fin-tag off">pausada</span>' : ''}
                                 ${pend.length ? `<span class="fin-tag due">${pend.length} em aberto</span>` : ''}
                             </div>
-                            <div class="fin-row-sub">${e.categoria} · ${
-                                e.recorrente ? 'desde ' + new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR')
-                                             : new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                            <div class="fin-row-sub">${sub}</div>
                         </div>
                         <div class="fin-row-val neg">− ${brl(e.valor)}</div>
                         <button class="planner-add" title="Editar despesa" onclick="openExpenseModal('${e.id}')">✎</button>
@@ -5128,9 +5341,12 @@
                 itens.push({ tipo: 'receita', id: p.id, periodo: per, valor: Number(p.valor) || 0,
                     titulo: c ? c.name : 'Cliente removido', sub: p.nome, dia: p.diaVenc });
             }));
-            (data.expenses || []).filter(e => e.recorrente).forEach(e => pendenciasDoItem(e).forEach(per => {
+            (data.expenses || []).filter(e => expenseKind(e) !== 'avulsa').forEach(e => pendenciasDoItem(e).forEach(per => {
+                const sp = saldoParcelado(e);
                 itens.push({ tipo: 'despesa', id: e.id, periodo: per, valor: Number(e.valor) || 0,
-                    titulo: e.descricao, sub: e.categoria, dia: null });
+                    titulo: e.descricao,
+                    sub: sp ? `${e.categoria} · parcela ${indiceParcela(e, per)}/${sp.total}` : e.categoria,
+                    dia: null });
             }));
 
             const cont = document.getElementById('pendenciasCard');
@@ -5209,7 +5425,9 @@
                 const desp = t.kind === 'despesa';
                 const client = (data.clients || []).find(c => c.id === t.clientId);
                 const titulo = desp ? (t.descricao || t.type || 'Despesa') : (client ? client.name : 'Cliente removido');
-                const sub = [desp ? t.type : t.type, t.periodo ? rotuloPeriodo(t.periodo) : null,
+                const sub = [desp ? t.type : t.type,
+                             t.deParcelas ? `parcela ${t.parcela}/${t.deParcelas}` : null,
+                             t.periodo ? rotuloPeriodo(t.periodo) : null,
                              new Date(String(t.date) + 'T00:00:00').toLocaleDateString('pt-BR')]
                             .filter(Boolean).join(' · ');
                 return `
