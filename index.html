@@ -3366,21 +3366,96 @@
         // ============================================
         const CARGA_API = 'https://script.google.com/macros/s/AKfycbxUegHMm5jJWUkD2lUX7_3K_aYMPw4_crYLRYUD-G4z68ff2yDZ4A2si4vSxfPDx1x_/exec';
         const CARGA_TOKEN_KEY = 'cargaTreino_token';
+        const CARGA_TIMEOUT_MS = 120000;      // 2 min: o backend às vezes leva ~1 min
+        const CARGA_URL = 'https://treinadorpaulomeira-code.github.io/controle-carga-interna/';
+        let cargaEmAndamento = false;         // impede duas sincronizações simultâneas
 
         function cargaToken() {
             return localStorage.getItem(CARGA_TOKEN_KEY);
         }
 
+        // Guarda o último diagnóstico para o botão "Sincronizar" poder explicar direito
+        let cargaUltimoErro = null;
+
+        // Classifica a falha em vez de devolver um "deu erro" genérico
+        function erroDeSync(e) {
+            const m = String((e && e.message) || e || '').toLowerCase();
+            if (m === 'sem-token')
+                return { code: 'sem-token', curto: '⚠️ Entre no Controle de Carga',
+                    titulo: 'Você não está logado no Controle de Carga neste navegador.',
+                    como: 'Abra o site do Controle de Carga Interna nesta mesma janela, faça login e volte aqui. O login é compartilhado entre os dois sites.' };
+            if (/token|sessao|sessão|login|autoriz|permiss|nao autenticado|não autenticado/.test(m))
+                return { code: 'token-invalido', curto: '⚠️ Sessão expirou',
+                    titulo: 'O Controle de Carga recusou a sua sessão.',
+                    como: 'O login venceu. Abra o Controle de Carga, entre de novo, volte aqui e clique em Sincronizar.',
+                    abrirCarga: true,
+                    detalhe: e.message };
+            if (m.includes('resposta-nao-json'))
+                return { code: 'endpoint', curto: '⚠️ Endereço da API mudou',
+                    titulo: 'O servidor respondeu, mas não com dados — veio uma página de erro do Google.',
+                    como: 'Isso acontece quando o Apps Script é publicado de novo: cada nova implantação ganha um endereço /exec diferente. Copie o endereço novo em Implantar → Gerenciar implantações e me mande que eu atualizo o site.',
+                    detalhe: e.detalhe };
+            if (m.startsWith('timeout-')) {
+                const nomes = { listalunos: 'a lista de atletas', getsessoestodos: 'as sessões de treino' };
+                const alvo = nomes[m.replace('timeout-', '')] || 'os dados';
+                const seg = Math.round(CARGA_TIMEOUT_MS / 1000);
+                const espera = seg >= 60
+                    ? `${Math.round(seg / 60)} minuto${seg >= 120 ? 's' : ''}`
+                    : `${seg} segundos`;
+                return { code: 'timeout', curto: '⚠️ Servidor demorou demais',
+                    titulo: `O Controle de Carga não devolveu ${alvo} em ${espera}.`,
+                    como: 'O Apps Script fica lento quando a planilha de sessões cresce muito. Tente de novo em alguns minutos; se repetir sempre, vale arquivar as sessões antigas da planilha.' };
+            }
+            if (m.startsWith('http-'))
+                return { code: 'http', curto: '⚠️ Servidor recusou (' + m.replace('http-', '') + ')',
+                    titulo: 'O servidor do Google respondeu com erro ' + m.replace('http-', '') + '.',
+                    como: 'Se for 401/403, a implantação está restrita — em Implantar → Gerenciar implantações, "Quem pode acessar" precisa ser "Qualquer pessoa". Se for 500, o script quebrou. Se for 429, a cota diária do Apps Script estourou; tente mais tarde.' };
+            if (/failed to fetch|networkerror|load failed|cors/.test(m))
+                return { code: 'rede', curto: '⚠️ Sem resposta do servidor',
+                    titulo: 'A requisição não chegou ao Google.',
+                    como: 'Pode ser a sua internet, o Apps Script fora do ar, ou uma extensão/bloqueador barrando script.google.com. Teste abrir o Controle de Carga: se ele também não carregar, é conexão.' };
+            return { code: 'api', curto: '⚠️ Erro na sincronização',
+                titulo: 'O Controle de Carga devolveu um erro.',
+                como: 'A mensagem exata do servidor está abaixo.',
+                detalhe: (e && e.message) || String(e) };
+        }
+
         async function cargaApi(action) {
             const token = cargaToken();
             if (!token) throw new Error('sem-token');
-            const res = await fetch(CARGA_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action, token })
-            });
-            const json = await res.json();
-            if (!json || json.ok === false) throw new Error(json && json.erro ? json.erro : 'falha na API');
+
+            // O getSessoesTodos pode passar de 1 min quando a planilha está grande.
+            // Damos folga, mas nunca deixamos pendurado para sempre.
+            const ctrl = new AbortController();
+            const limite = setTimeout(() => ctrl.abort(), CARGA_TIMEOUT_MS);
+            let res;
+            try {
+                res = await fetch(CARGA_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action, token }),
+                    signal: ctrl.signal
+                });
+            } catch (netErr) {
+                if (netErr.name === 'AbortError') throw new Error('timeout-' + action);
+                throw new Error('Failed to fetch: ' + netErr.message);
+            } finally {
+                clearTimeout(limite);
+            }
+
+            if (!res.ok) throw new Error('http-' + res.status);
+
+            const texto = await res.text();
+            let json;
+            try {
+                json = JSON.parse(texto);
+            } catch (parseErr) {
+                // O Apps Script devolve HTML quando a implantação está errada ou pede autorização
+                const err = new Error('resposta-nao-json');
+                err.detalhe = texto.slice(0, 240).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                throw err;
+            }
+            if (!json || json.ok === false) throw new Error(json && json.erro ? json.erro : 'a API respondeu ok=false');
             return json;
         }
 
@@ -3391,10 +3466,13 @@
         async function syncControleCarga(opts = {}) {
             const silent = !!opts.silent;
             if (!cargaToken()) {
-                if (!silent) updateSyncStatus('⚠️ Entre no Controle de Carga primeiro');
+                cargaUltimoErro = erroDeSync(new Error('sem-token'));
+                if (!silent) updateSyncStatus(cargaUltimoErro.curto);
                 return { ok: false, reason: 'sem-token' };
             }
 
+            if (cargaEmAndamento) return { ok: false, reason: 'em-andamento' };
+            cargaEmAndamento = true;
             updateSyncStatus('🔄 Sincronizando...');
             try {
                 const [alunosRes, sessoesRes] = await Promise.all([
@@ -3484,22 +3562,34 @@
 
                 return { ok: true, novosClientes, novasSessoes, atualizadas, totalSessoes: sessoes.length, totalAlunos: alunos.length };
             } catch (err) {
-                const msg = err.message === 'sem-token'
-                    ? '⚠️ Entre no Controle de Carga'
-                    : '⚠️ Falha na sincronização';
-                updateSyncStatus(msg);
-                console.warn('Sync controle de carga:', err);
-                return { ok: false, reason: err.message };
+                cargaUltimoErro = erroDeSync(err);
+                updateSyncStatus(cargaUltimoErro.curto);
+                console.warn('Sync controle de carga:', cargaUltimoErro.code, err);
+                return { ok: false, reason: cargaUltimoErro.code, diag: cargaUltimoErro };
+            } finally {
+                cargaEmAndamento = false;
             }
         }
 
         async function syncControleCargaManual() {
             const r = await syncControleCarga();
             if (!r.ok) {
-                if (r.reason === 'sem-token') {
-                    alert('Para sincronizar, abra o Controle de Carga Interna e faça login.\n\nDepois volte aqui e clique em Sincronizar novamente.');
+                if (r.reason === 'em-andamento') return;   // já tem uma rodando
+                const d = r.diag || cargaUltimoErro || erroDeSync(new Error(r.reason || ''));
+                const precisaLogin = d.code === 'sem-token' || d.code === 'token-invalido';
+                const texto =
+                    'Não sincronizou\n\n' +
+                    d.titulo + '\n\n' +
+                    'O que fazer:\n' + d.como +
+                    (d.detalhe ? '\n\nResposta do servidor:\n' + d.detalhe : '') +
+                    '\n\n(código: ' + d.code + ')';
+
+                if (precisaLogin) {
+                    if (confirm(texto + '\n\nAbrir o Controle de Carga agora?')) {
+                        window.open(CARGA_URL, '_blank', 'noopener');
+                    }
                 } else {
-                    alert('Não foi possível sincronizar agora. Verifique sua conexão e tente de novo.');
+                    alert(texto);
                 }
                 return;
             }
@@ -3522,7 +3612,9 @@
             if (statusEl) {
                 statusEl.textContent = message;
                 statusEl.className = 'sync-indicator';
-                if (message.includes('Sem')) statusEl.className += ' error';
+                if (message.includes('Sem') || message.includes('⚠️')) statusEl.className += ' error';
+                statusEl.title = cargaUltimoErro && message.includes('⚠️')
+                    ? cargaUltimoErro.titulo + ' — ' + cargaUltimoErro.como : '';
             }
         }
 
