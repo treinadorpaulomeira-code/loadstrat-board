@@ -1588,6 +1588,146 @@
             .app { height: 100dvh; }
         }
 
+        /* ============ CAIXA DE PERGUNTA DO ASSISTENTE ============ */
+        .ai-ask-box {
+            background: rgba(212,175,55,0.06);
+            border: 1px solid rgba(212,175,55,0.26);
+            border-radius: 10px;
+            padding: 13px 14px;
+            margin-bottom: 18px;
+        }
+        .ai-ask-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-bottom: 9px;
+        }
+        .ai-ask-row { display: flex; gap: 9px; align-items: stretch; }
+        .ai-ask-row input {
+            flex: 1;
+            min-width: 0;
+            margin: 0;
+        }
+        .ai-ask-row button { flex: 0 0 auto; white-space: nowrap; }
+        .ai-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .ai-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: border-color .15s, color .15s;
+        }
+        .ai-chip:hover { border-color: var(--primary); color: var(--primary); }
+
+        .ai-answer:empty { display: none; }
+        .ai-answer {
+            margin-bottom: 18px;
+            border-left: 3px solid var(--primary);
+            background: rgba(255,255,255,0.03);
+            border-radius: 0 8px 8px 0;
+            padding: 13px 15px;
+        }
+        .ai-answer p { color: var(--text-secondary); font-size: 0.87rem; line-height: 1.6; margin: 0 0 6px; }
+        .ai-answer ul { margin: 4px 0 0 18px; padding: 0; }
+        .ai-answer li { color: var(--text-secondary); font-size: 0.86rem; line-height: 1.7; }
+        .ai-answer strong { color: var(--text-primary); }
+
+        .ai-slot {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.02);
+        }
+        .ai-slot.top { border-color: rgba(212,175,55,0.5); background: rgba(212,175,55,0.07); }
+        .ai-slot-when {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .ai-slot-tag {
+            background: var(--primary);
+            color: #12100c;
+            font-size: 0.64rem;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+        .ai-slot-why { color: var(--text-muted); font-size: 0.79rem; margin: 4px 0 6px; line-height: 1.5; }
+        .ai-slot-warn { color: #eba640; font-size: 0.77rem; margin: 0 0 8px; line-height: 1.5; }
+
+        /* ============ FINANCEIRO ============ */
+        .fin-empty {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.55;
+            padding: 16px 0;
+        }
+        .fin-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .fin-row:last-child { border-bottom: none; }
+        .fin-row.off { opacity: 0.55; }
+        .fin-row-main { flex: 1; min-width: 0; }
+        .fin-row-title {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+        .fin-row-sub { color: var(--text-muted); font-size: 0.78rem; margin-top: 2px; }
+        .fin-row-val {
+            font-weight: 600;
+            color: #4dbd8a;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .fin-row-val.neg { color: #e34b57; }
+        .fin-tag {
+            font-size: 0.66rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: 600;
+        }
+        .fin-tag.rec { background: rgba(212,175,55,0.18); color: var(--primary); }
+        .fin-tag.due { background: rgba(235,166,64,0.18); color: #eba640; }
+        .fin-tag.off { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+        .fin-pend-head {
+            display: flex;
+            gap: 22px;
+            flex-wrap: wrap;
+            padding-bottom: 12px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
+        .fin-pend-head strong { font-size: 1.02rem; margin-left: 5px; }
+        .fin-pend-head .pos { color: #4dbd8a; }
+        .fin-pend-head .neg { color: #e34b57; }
+        .stat-value.pos { color: #4dbd8a; }
+        .stat-value.neg { color: #e34b57; }
+        .stat-sub { color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; line-height: 1.4; }
+        .btn-secondary.danger { color: #e34b57; border-color: rgba(227,75,87,0.4); }
+
+
         /* ============ CRONOGRAMA DE CORRIDA ============ */
         .run-result:empty { display: none; }
         .run-result {
@@ -2122,30 +2262,52 @@
                 <!-- FINANCEIRO TAB -->
                 <div id="financeiro" class="tab-content">
                     <div class="grid-2">
-                        <div class="card">
-                            <div class="card-title">💰 KPIs</div>
+                        <div class="card grid-full">
+                            <div class="card-title">💰 Resumo do mês</div>
                             <div class="stats-grid">
                                 <div class="stat-box">
-                                    <div class="stat-label">Hoje</div>
-                                    <div class="stat-value" id="finToday">R$0</div>
+                                    <div class="stat-label">Receita</div>
+                                    <div class="stat-value" id="finRevenue">R$ 0,00</div>
                                 </div>
                                 <div class="stat-box">
-                                    <div class="stat-label">Semana</div>
-                                    <div class="stat-value" id="finWeek">R$0</div>
+                                    <div class="stat-label">Despesas</div>
+                                    <div class="stat-value" id="finExpense">R$ 0,00</div>
                                 </div>
                                 <div class="stat-box">
-                                    <div class="stat-label">Mês</div>
-                                    <div class="stat-value" id="finMonth">R$0</div>
+                                    <div class="stat-label">Saldo do mês</div>
+                                    <div class="stat-value" id="finBalance">R$ 0,00</div>
                                 </div>
                                 <div class="stat-box">
-                                    <div class="stat-label">Total</div>
-                                    <div class="stat-value" id="finTotal">R$0</div>
+                                    <div class="stat-label">Receita recorrente</div>
+                                    <div class="stat-value" id="finMRR">R$ 0,00</div>
+                                    <div class="stat-sub" id="finMRRSub"></div>
                                 </div>
                             </div>
                         </div>
 
+                        <div class="card grid-full" id="pendenciasCard" style="display:none;">
+                            <div class="card-title">⏳ Em aberto</div>
+                            <div id="pendenciasList"></div>
+                        </div>
+
                         <div class="card">
-                            <div class="card-title">➕ Adicionar Receita</div>
+                            <div class="flex-between">
+                                <div class="card-title">🔁 Planos recorrentes</div>
+                                <button class="chart-toggle" onclick="openPlanModal('')">➕ Novo plano</button>
+                            </div>
+                            <div id="plansList" class="mt-20"></div>
+                        </div>
+
+                        <div class="card">
+                            <div class="flex-between">
+                                <div class="card-title">📉 Despesas</div>
+                                <button class="chart-toggle" onclick="openExpenseModal('')">➕ Nova despesa</button>
+                            </div>
+                            <div id="expensesList" class="mt-20"></div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">➕ Receita avulsa</div>
                             <div class="form-group">
                                 <label>Cliente</label>
                                 <select id="finClient">
@@ -2154,23 +2316,28 @@
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$)</label>
-                                <input type="number" id="finAmount" placeholder="0.00" step="0.01" min="0">
+                                <input type="number" id="finAmount" placeholder="0,00" step="0.01" min="0">
                             </div>
                             <div class="form-group">
                                 <label>Tipo</label>
                                 <select id="finType">
-                                    <option value="Sessão">Sessão Pessoal</option>
+                                    <option value="Sessão avulsa">Sessão avulsa</option>
                                     <option value="Pacote">Pacote</option>
                                     <option value="Avaliação">Avaliação</option>
+                                    <option value="Consultoria">Consultoria</option>
                                     <option value="Outro">Outro</option>
                                 </select>
                             </div>
                             <button onclick="addTransaction()" style="width: 100%;">Registrar</button>
                         </div>
 
-                        <div class="card grid-full">
-                            <div class="card-title">📋 Últimas Transações</div>
+                        <div class="card">
+                            <div class="card-title">📋 Últimos lançamentos</div>
                             <div id="transactionsList" class="mt-20"></div>
+                            <div class="stat-box" style="margin-top:14px;">
+                                <div class="stat-label">Saldo acumulado</div>
+                                <div class="stat-value" id="finTotal">R$ 0,00</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2363,6 +2530,107 @@
     </div>
 
 
+
+    <!-- MODAL: PLANO RECORRENTE -->
+    <div id="planModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="planModalTitle">Novo plano</div>
+                <button class="modal-close" onclick="closeModal('planModal')">✕</button>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.84rem; margin-bottom: 16px;">
+                O plano gera a cobrança sozinho a cada ciclo. Ela aparece em <strong>Em aberto</strong> e
+                só vira receita quando você confirma que recebeu.
+            </p>
+            <div class="form-group">
+                <label>Cliente</label>
+                <select id="planClient"></select>
+            </div>
+            <div class="form-group">
+                <label>Nome do plano</label>
+                <input type="text" id="planName" placeholder="Ex: Personal 3x semana">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="planAmount" step="0.01" min="0" placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label>Cobrança</label>
+                    <select id="planCycle"></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dia do vencimento</label>
+                    <input type="number" id="planDueDay" min="1" max="28" value="5">
+                </div>
+                <div class="form-group">
+                    <label>Início</label>
+                    <input type="date" id="planStart">
+                </div>
+            </div>
+            <label style="display:flex; align-items:center; gap:9px; margin-top:6px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
+                <input type="checkbox" id="planActive" checked style="width:auto;">
+                Plano ativo — continua gerando cobranças
+            </label>
+            <div class="modal-footer">
+                <span id="planHint" class="save-hint"></span>
+                <button class="btn-secondary danger" id="planDelete" onclick="deletePlan()">Excluir</button>
+                <button class="btn-secondary" onclick="closeModal('planModal')">Cancelar</button>
+                <button onclick="savePlan()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DESPESA -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="expenseModalTitle">Nova despesa</div>
+                <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" id="expenseDesc" placeholder="Ex: Aluguel da sala">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="expenseAmount" step="0.01" min="0" placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="expenseCategory"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label id="expenseDateLabel">Data da despesa</label>
+                <input type="date" id="expenseDate">
+            </div>
+            <label style="display:flex; align-items:center; gap:9px; margin-top:2px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
+                <input type="checkbox" id="expenseRecurring" onchange="toggleExpenseRecurring()" style="width:auto;">
+                Despesa recorrente — se repete a cada ciclo
+            </label>
+            <div id="expenseRecurringFields" style="display:none; margin-top:14px;">
+                <div class="form-group">
+                    <label>Frequência</label>
+                    <select id="expenseCycle"></select>
+                </div>
+                <label style="display:flex; align-items:center; gap:9px; cursor:pointer; color:var(--text-secondary); font-size:0.86rem;">
+                    <input type="checkbox" id="expenseActive" checked style="width:auto;">
+                    Ativa — continua gerando lançamentos
+                </label>
+            </div>
+            <div class="modal-footer">
+                <span id="expenseHint" class="save-hint"></span>
+                <button class="btn-secondary danger" id="expenseDelete" onclick="deleteExpense()">Excluir</button>
+                <button class="btn-secondary" onclick="closeModal('expenseModal')">Cancelar</button>
+                <button onclick="saveExpense()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ASSISTENTE DE AGENDA -->
     <div id="plannerAiModal" class="modal">
         <div class="modal-content" style="max-width: 720px;">
@@ -2370,9 +2638,28 @@
                 <div class="modal-title">🧠 Assistente de agenda</div>
                 <button class="modal-close" onclick="closeModal('plannerAiModal')">✕</button>
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 18px;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">
                 Análise da sua semana: conflitos, janelas ociosas, distribuição de turnos e carga dos atletas agendados.
             </p>
+
+            <div class="ai-ask-box">
+                <div class="ai-ask-label">Pergunte o que quiser sobre a sua agenda — ele responde com os seus horários reais.</div>
+                <div class="ai-ask-row">
+                    <input type="text" id="aiAsk" onkeydown="aiAskKey(event)"
+                           placeholder="Ex: quero encaixar 1h na terça de manhã, qual o melhor horário?">
+                    <button onclick="responderPergunta()">Perguntar</button>
+                </div>
+                <div class="ai-chips">
+                    <button class="ai-chip" onclick="aiExemplo('Onde encaixo 1h nesta semana?')">Onde encaixo 1h?</button>
+                    <button class="ai-chip" onclick="aiExemplo('Melhor horário de manhã para uma avaliação de 90 min')">Avaliação de 90 min</button>
+                    <button class="ai-chip" onclick="aiExemplo('Qual meu dia mais livre?')">Dia mais livre</button>
+                    <button class="ai-chip" onclick="aiExemplo('Onde tenho janelas ociosas?')">Janelas ociosas</button>
+                    <button class="ai-chip" onclick="aiExemplo('Quantas horas eu trabalho nesta semana?')">Carga horária</button>
+                </div>
+            </div>
+
+            <div class="ai-answer" id="aiAnswer"></div>
+
             <div id="plannerAiBody"></div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="openPlannerAi()">↻ Reanalisar</button>
@@ -4464,25 +4751,478 @@
         // FINANCEIRO
         // ============================================
 
+
+        // ============================================
+        // FINANCEIRO — PLANOS RECORRENTES E DESPESAS
+        // ============================================
+
+        const CICLOS = {
+            mensal:     { label: 'Mensal',      meses: 1 },
+            bimestral:  { label: 'Bimestral',   meses: 2 },
+            trimestral: { label: 'Trimestral',  meses: 3 },
+            semestral:  { label: 'Semestral',   meses: 6 },
+            anual:      { label: 'Anual',       meses: 12 }
+        };
+
+        const CATEGORIAS_DESPESA = [
+            'Aluguel / espaço', 'Equipamentos', 'Software e assinaturas', 'Transporte',
+            'Marketing', 'Impostos e taxas', 'Educação / cursos', 'Alimentação', 'Outro'
+        ];
+
+        function ensureFinanceData() {
+            if (!Array.isArray(data.plans)) data.plans = [];
+            if (!Array.isArray(data.expenses)) data.expenses = [];
+            (data.transactions || []).forEach(t => { if (!t.kind) t.kind = 'receita'; });
+        }
+
+        // Formatação de moeda em pt-BR, sempre com o sinal fora do valor
+        function brl(v) {
+            const n = Math.abs(Number(v) || 0);
+            return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function brlSigned(v) { return (Number(v) < 0 ? '− ' : '') + brl(v); }
+
+        function periodoAtual() { return new Date().toISOString().slice(0, 7); }   // YYYY-MM
+
+        function somaPeriodo(p, n) {
+            const [a, m] = p.split('-').map(Number);
+            const d = new Date(a, m - 1 + n, 1);
+            return d.toISOString().slice(0, 7);
+        }
+
+        function rotuloPeriodo(p) {
+            const [a, m] = p.split('-').map(Number);
+            const s = new Date(a, m - 1, 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+            return s.charAt(0).toUpperCase() + s.slice(1).replace('.', '');
+        }
+
+        // Períodos que já venceram e ainda não foram cobrados
+        function pendenciasDoItem(item) {
+            if (item.ativo === false) return [];
+            const meses = (CICLOS[item.ciclo] || CICLOS.mensal).meses;
+            const pagos = item.pagos || [];
+            const hoje = periodoAtual();
+            const pend = [];
+            let p = (item.inicio || hoje).slice(0, 7);
+            let guard = 0;
+            while (p <= hoje && guard++ < 240) {
+                if (!pagos.includes(p)) pend.push(p);
+                p = somaPeriodo(p, meses);
+            }
+            return pend;
+        }
+
+        // Receita recorrente normalizada por mês
+        function mrr() {
+            return (data.plans || []).filter(p => p.ativo !== false)
+                .reduce((s, p) => s + (Number(p.valor) || 0) / (CICLOS[p.ciclo] || CICLOS.mensal).meses, 0);
+        }
+        function despesaRecorrenteMensal() {
+            return (data.expenses || []).filter(e => e.recorrente && e.ativo !== false)
+                .reduce((s, e) => s + (Number(e.valor) || 0) / (CICLOS[e.ciclo] || CICLOS.mensal).meses, 0);
+        }
+
+        // ---- Planos ----
+        let editingPlanId = null;
+
+        function openPlanModal(id) {
+            ensureFinanceData();
+            editingPlanId = id || null;
+            const p = id ? data.plans.find(x => x.id === id) : null;
+            document.getElementById('planModalTitle').textContent = p ? 'Editar plano' : 'Novo plano';
+
+            const sel = document.getElementById('planClient');
+            sel.innerHTML = '<option value="">Selecione o cliente…</option>' +
+                (data.clients || []).slice().sort((a, b) => a.name.localeCompare(b.name))
+                    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            const cic = document.getElementById('planCycle');
+            cic.innerHTML = Object.entries(CICLOS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+            document.getElementById('planClient').value = p ? p.clientId : '';
+            document.getElementById('planName').value = p ? p.nome : '';
+            document.getElementById('planAmount').value = p ? p.valor : '';
+            document.getElementById('planCycle').value = p ? p.ciclo : 'mensal';
+            document.getElementById('planDueDay').value = p ? (p.diaVenc || 5) : 5;
+            document.getElementById('planStart').value = p ? (p.inicio || getTodayDate()) : getTodayDate();
+            document.getElementById('planActive').checked = p ? p.ativo !== false : true;
+
+            const h = document.getElementById('planHint'); h.textContent = ''; h.className = 'save-hint';
+            document.getElementById('planDelete').style.display = p ? '' : 'none';
+            document.getElementById('planModal').classList.add('active');
+        }
+
+        function savePlan() {
+            ensureFinanceData();
+            const clientId = document.getElementById('planClient').value;
+            const valor = parseFloat(document.getElementById('planAmount').value);
+            const hint = document.getElementById('planHint');
+
+            if (!clientId || !valor || valor <= 0) {
+                hint.textContent = 'Escolha o cliente e informe um valor.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            const campos = {
+                clientId,
+                nome: (document.getElementById('planName').value || '').trim() || 'Plano',
+                valor,
+                ciclo: document.getElementById('planCycle').value,
+                diaVenc: Number(document.getElementById('planDueDay').value) || 5,
+                inicio: document.getElementById('planStart').value || getTodayDate(),
+                ativo: document.getElementById('planActive').checked
+            };
+
+            if (editingPlanId) {
+                Object.assign(data.plans.find(x => x.id === editingPlanId), campos);
+            } else {
+                data.plans.push({ id: 'pl_' + Date.now(), pagos: [], criadoEm: new Date().toISOString(), ...campos });
+            }
+            saveData();
+            closeModal('planModal');
+            renderFinanceiro();
+        }
+
+        function deletePlan() {
+            if (!editingPlanId) return;
+            if (!confirm('Excluir este plano? As cobranças já registradas continuam no histórico.')) return;
+            data.plans = data.plans.filter(x => x.id !== editingPlanId);
+            saveData();
+            closeModal('planModal');
+            renderFinanceiro();
+        }
+
+        function cobrarPlano(planId, periodo) {
+            const p = data.plans.find(x => x.id === planId);
+            if (!p) return;
+            p.pagos = p.pagos || [];
+            if (p.pagos.includes(periodo)) return;   // já recebido neste ciclo
+            const c = (data.clients || []).find(x => x.id === p.clientId);
+            data.transactions.push({
+                id: 't_' + Date.now(),
+                kind: 'receita',
+                clientId: p.clientId,
+                planId,
+                periodo,
+                amount: Number(p.valor) || 0,
+                type: p.nome,
+                date: getTodayDate(),
+                createdAt: new Date().toISOString()
+            });
+            p.pagos.push(periodo);
+            saveData();
+            renderFinanceiro();
+            updateSyncStatus(`✓ ${c ? c.name : 'Cobrança'} · ${rotuloPeriodo(periodo)} registrada`);
+        }
+
+        // ---- Despesas ----
+        let editingExpenseId = null;
+
+        function openExpenseModal(id) {
+            ensureFinanceData();
+            editingExpenseId = id || null;
+            const e = id ? data.expenses.find(x => x.id === id) : null;
+            document.getElementById('expenseModalTitle').textContent = e ? 'Editar despesa' : 'Nova despesa';
+
+            document.getElementById('expenseCategory').innerHTML =
+                CATEGORIAS_DESPESA.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('expenseCycle').innerHTML =
+                Object.entries(CICLOS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+            document.getElementById('expenseDesc').value = e ? e.descricao : '';
+            document.getElementById('expenseAmount').value = e ? e.valor : '';
+            document.getElementById('expenseCategory').value = e ? e.categoria : CATEGORIAS_DESPESA[0];
+            document.getElementById('expenseDate').value = e ? (e.data || getTodayDate()) : getTodayDate();
+            document.getElementById('expenseRecurring').checked = e ? !!e.recorrente : false;
+            document.getElementById('expenseCycle').value = e ? (e.ciclo || 'mensal') : 'mensal';
+            document.getElementById('expenseActive').checked = e ? e.ativo !== false : true;
+            toggleExpenseRecurring();
+
+            const h = document.getElementById('expenseHint'); h.textContent = ''; h.className = 'save-hint';
+            document.getElementById('expenseDelete').style.display = e ? '' : 'none';
+            document.getElementById('expenseModal').classList.add('active');
+        }
+
+        function toggleExpenseRecurring() {
+            const on = document.getElementById('expenseRecurring').checked;
+            document.getElementById('expenseRecurringFields').style.display = on ? '' : 'none';
+            const lbl = document.getElementById('expenseDateLabel');
+            if (lbl) lbl.textContent = on ? 'Início da recorrência' : 'Data da despesa';
+        }
+
+        function saveExpense() {
+            ensureFinanceData();
+            const descricao = (document.getElementById('expenseDesc').value || '').trim();
+            const valor = parseFloat(document.getElementById('expenseAmount').value);
+            const hint = document.getElementById('expenseHint');
+
+            if (!descricao || !valor || valor <= 0) {
+                hint.textContent = 'Informe a descrição e um valor.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            const recorrente = document.getElementById('expenseRecurring').checked;
+            const campos = {
+                descricao, valor,
+                categoria: document.getElementById('expenseCategory').value,
+                data: document.getElementById('expenseDate').value || getTodayDate(),
+                recorrente,
+                ciclo: recorrente ? document.getElementById('expenseCycle').value : null,
+                ativo: document.getElementById('expenseActive').checked
+            };
+            if (recorrente) campos.inicio = campos.data;
+
+            if (editingExpenseId) {
+                Object.assign(data.expenses.find(x => x.id === editingExpenseId), campos);
+            } else {
+                const nova = { id: 'ex_' + Date.now(), pagos: [], criadoEm: new Date().toISOString(), ...campos };
+                data.expenses.push(nova);
+                // despesa avulsa já entra como lançamento do dia
+                if (!recorrente) {
+                    data.transactions.push({
+                        id: 't_' + Date.now(), kind: 'despesa', expenseId: nova.id,
+                        amount: valor, type: campos.categoria, descricao,
+                        date: campos.data, createdAt: new Date().toISOString()
+                    });
+                }
+            }
+            saveData();
+            closeModal('expenseModal');
+            renderFinanceiro();
+        }
+
+        function deleteExpense() {
+            if (!editingExpenseId) return;
+            if (!confirm('Excluir esta despesa? Os lançamentos já registrados continuam no histórico.')) return;
+            data.expenses = data.expenses.filter(x => x.id !== editingExpenseId);
+            saveData();
+            closeModal('expenseModal');
+            renderFinanceiro();
+        }
+
+        function pagarDespesa(expId, periodo) {
+            const e = data.expenses.find(x => x.id === expId);
+            if (!e) return;
+            e.pagos = e.pagos || [];
+            if (e.pagos.includes(periodo)) return;   // já pago neste ciclo
+            data.transactions.push({
+                id: 't_' + Date.now(), kind: 'despesa', expenseId: expId, periodo,
+                amount: Number(e.valor) || 0, type: e.categoria, descricao: e.descricao,
+                date: getTodayDate(), createdAt: new Date().toISOString()
+            });
+            e.pagos.push(periodo);
+            saveData();
+            renderFinanceiro();
+            updateSyncStatus(`✓ ${e.descricao} · ${rotuloPeriodo(periodo)} lançada`);
+        }
+
+        // ---- Render ----
         function renderFinanceiro() {
+            ensureFinanceData();
             updateFinanceiroKPIs();
             updateFinanceiroSelects();
+            renderPlans();
+            renderExpenses();
+            renderPendencias();
             renderTransactions();
         }
 
         function updateFinanceiroKPIs() {
-            const today = getTodayDate();
-            const todayTransactions = data.transactions.filter(t => t.date === today);
-            const weekStart = new Date();
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-            const weekTransactions = data.transactions.filter(t => new Date(t.date) >= weekStart);
-            const monthTransactions = data.transactions.filter(t => t.date.substring(0, 7) === today.substring(0, 7));
-            const total = data.transactions.reduce((sum, t) => sum + t.amount, 0);
+            ensureFinanceData();
+            const mes = periodoAtual();
+            const doMes = (data.transactions || []).filter(t => String(t.date).slice(0, 7) === mes);
+            const receita = doMes.filter(t => t.kind !== 'despesa').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+            const despesa = doMes.filter(t => t.kind === 'despesa').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+            const rec = mrr(), desp = despesaRecorrenteMensal();
 
-            document.getElementById('finToday').textContent = 'R$ ' + todayTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
-            document.getElementById('finWeek').textContent = 'R$ ' + weekTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
-            document.getElementById('finMonth').textContent = 'R$ ' + monthTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2);
-            document.getElementById('finTotal').textContent = 'R$ ' + total.toFixed(2);
+            const set = (id, v, cls) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = v;
+                if (cls !== undefined) el.className = 'stat-value' + (cls ? ' ' + cls : '');
+            };
+
+            set('finRevenue', brl(receita));
+            set('finExpense', brl(despesa));
+            set('finBalance', brlSigned(receita - despesa), receita - despesa < 0 ? 'neg' : 'pos');
+            set('finMRR', brl(rec));
+            set('finMRRSub', `menos ${brl(desp)} de custos fixos = ${brlSigned(rec - desp)} líquido`);
+            const acumulado = (data.transactions || [])
+                .reduce((s, t) => s + (t.kind === 'despesa' ? -1 : 1) * (Number(t.amount) || 0), 0);
+            set('finTotal', brlSigned(acumulado), acumulado < 0 ? 'neg' : '');
+        }
+
+        function renderPlans() {
+            const el = document.getElementById('plansList');
+            if (!el) return;
+            const plans = (data.plans || []).slice()
+                .sort((a, b) => (a.ativo === false) - (b.ativo === false) || (b.valor - a.valor));
+
+            if (!plans.length) {
+                el.innerHTML = '<div class="fin-empty">Nenhum plano cadastrado. Um plano cobra o mesmo cliente de forma recorrente — você só confirma cada cobrança.</div>';
+                return;
+            }
+
+            el.innerHTML = plans.map(p => {
+                const c = (data.clients || []).find(x => x.id === p.clientId);
+                const pend = pendenciasDoItem(p);
+                const meses = (CICLOS[p.ciclo] || CICLOS.mensal).meses;
+                const proximo = pend.length ? pend[0] : somaPeriodo(
+                    (p.pagos || []).slice().sort().pop() || periodoAtual(), meses);
+                return `
+                    <div class="fin-row${p.ativo === false ? ' off' : ''}">
+                        <div class="fin-row-main">
+                            <div class="fin-row-title">${c ? c.name : 'Cliente removido'}
+                                ${p.ativo === false ? '<span class="fin-tag off">pausado</span>' : ''}
+                                ${pend.length ? `<span class="fin-tag due">${pend.length} em aberto</span>` : ''}
+                            </div>
+                            <div class="fin-row-sub">${p.nome} · ${(CICLOS[p.ciclo] || CICLOS.mensal).label} ·
+                                vence dia ${p.diaVenc} · próximo ${rotuloPeriodo(proximo)}</div>
+                        </div>
+                        <div class="fin-row-val">${brl(p.valor)}</div>
+                        <button class="planner-add" title="Editar plano" onclick="openPlanModal('${p.id}')">✎</button>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderExpenses() {
+            const el = document.getElementById('expensesList');
+            if (!el) return;
+            const list = (data.expenses || []).slice()
+                .sort((a, b) => (b.recorrente ? 1 : 0) - (a.recorrente ? 1 : 0) || String(b.data).localeCompare(String(a.data)));
+
+            if (!list.length) {
+                el.innerHTML = '<div class="fin-empty">Nenhuma despesa lançada. Marque como recorrente o que se repete todo mês — aluguel, software, seguro.</div>';
+                return;
+            }
+
+            el.innerHTML = list.slice(0, 30).map(e => {
+                const pend = e.recorrente ? pendenciasDoItem(e) : [];
+                return `
+                    <div class="fin-row${e.ativo === false ? ' off' : ''}">
+                        <div class="fin-row-main">
+                            <div class="fin-row-title">${e.descricao}
+                                ${e.recorrente ? `<span class="fin-tag rec">${(CICLOS[e.ciclo] || CICLOS.mensal).label}</span>` : ''}
+                                ${e.ativo === false ? '<span class="fin-tag off">pausada</span>' : ''}
+                                ${pend.length ? `<span class="fin-tag due">${pend.length} em aberto</span>` : ''}
+                            </div>
+                            <div class="fin-row-sub">${e.categoria} · ${
+                                e.recorrente ? 'desde ' + new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR')
+                                             : new Date(e.data + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div class="fin-row-val neg">− ${brl(e.valor)}</div>
+                        <button class="planner-add" title="Editar despesa" onclick="openExpenseModal('${e.id}')">✎</button>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderPendencias() {
+            const el = document.getElementById('pendenciasList');
+            if (!el) return;
+
+            const itens = [];
+            (data.plans || []).forEach(p => pendenciasDoItem(p).forEach(per => {
+                const c = (data.clients || []).find(x => x.id === p.clientId);
+                itens.push({ tipo: 'receita', id: p.id, periodo: per, valor: Number(p.valor) || 0,
+                    titulo: c ? c.name : 'Cliente removido', sub: p.nome, dia: p.diaVenc });
+            }));
+            (data.expenses || []).filter(e => e.recorrente).forEach(e => pendenciasDoItem(e).forEach(per => {
+                itens.push({ tipo: 'despesa', id: e.id, periodo: per, valor: Number(e.valor) || 0,
+                    titulo: e.descricao, sub: e.categoria, dia: null });
+            }));
+
+            const cont = document.getElementById('pendenciasCard');
+            if (!itens.length) {
+                if (cont) cont.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+            if (cont) cont.style.display = '';
+
+            itens.sort((a, b) => a.periodo.localeCompare(b.periodo) || (a.tipo === 'receita' ? -1 : 1));
+            const receber = itens.filter(i => i.tipo === 'receita').reduce((s, i) => s + i.valor, 0);
+            const pagar = itens.filter(i => i.tipo === 'despesa').reduce((s, i) => s + i.valor, 0);
+
+            el.innerHTML = `
+                <div class="fin-pend-head">
+                    <span>A receber <strong class="pos">${brl(receber)}</strong></span>
+                    <span>A pagar <strong class="neg">${brl(pagar)}</strong></span>
+                </div>
+                ${itens.slice(0, 20).map(i => `
+                    <div class="fin-row">
+                        <div class="fin-row-main">
+                            <div class="fin-row-title">${i.titulo}</div>
+                            <div class="fin-row-sub">${i.sub} · ${rotuloPeriodo(i.periodo)}${i.dia ? ' · dia ' + i.dia : ''}</div>
+                        </div>
+                        <div class="fin-row-val ${i.tipo === 'despesa' ? 'neg' : ''}">${i.tipo === 'despesa' ? '− ' : ''}${brl(i.valor)}</div>
+                        <button class="chart-toggle" onclick="${
+                            i.tipo === 'receita' ? `cobrarPlano('${i.id}','${i.periodo}')` : `pagarDespesa('${i.id}','${i.periodo}')`
+                        }">${i.tipo === 'receita' ? 'Recebi' : 'Paguei'}</button>
+                    </div>`).join('')}
+                ${itens.length > 20 ? `<div class="fin-empty">e mais ${itens.length - 20} pendência(s).</div>` : ''}`;
+        }
+
+        function updateFinanceiroSelects() {
+            const select = document.getElementById('finClient');
+            if (!select) return;
+            const atual = select.value;
+            select.innerHTML = '<option value="">Selecione...</option>' +
+                (data.clients || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            select.value = atual;
+        }
+
+        function addTransaction() {
+            ensureFinanceData();
+            const clientId = document.getElementById('finClient').value;
+            const amount = parseFloat(document.getElementById('finAmount').value);
+            const type = document.getElementById('finType').value;
+
+            if (!clientId || !amount) { alert('Preencha cliente e valor'); return; }
+
+            data.transactions.push({
+                id: 't_' + Date.now(), kind: 'receita', clientId, amount, type,
+                date: getTodayDate(), createdAt: new Date().toISOString()
+            });
+            saveData();
+            document.getElementById('finAmount').value = '';
+            document.getElementById('finClient').value = '';
+            renderFinanceiro();
+        }
+
+        function renderTransactions() {
+            const container = document.getElementById('transactionsList');
+            if (!container) return;
+            ensureFinanceData();
+            const transactions = (data.transactions || []).slice()
+                .sort((a, b) => String(b.date).localeCompare(String(a.date)) ||
+                                String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+                .slice(0, 25);
+
+            if (!transactions.length) {
+                container.innerHTML = '<div class="fin-empty">Nenhum lançamento ainda.</div>';
+                return;
+            }
+
+            container.innerHTML = transactions.map(t => {
+                const desp = t.kind === 'despesa';
+                const client = (data.clients || []).find(c => c.id === t.clientId);
+                const titulo = desp ? (t.descricao || t.type || 'Despesa') : (client ? client.name : 'Cliente removido');
+                const sub = [desp ? t.type : t.type, t.periodo ? rotuloPeriodo(t.periodo) : null,
+                             new Date(String(t.date) + 'T00:00:00').toLocaleDateString('pt-BR')]
+                            .filter(Boolean).join(' · ');
+                return `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${titulo}</div>
+                            <div class="list-item-subtitle">${sub}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="fin-row-val ${desp ? 'neg' : ''}">${desp ? '−' : '+'} ${brl(t.amount)}</div>
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
         function updateEmphasisOptions() {
@@ -4493,67 +5233,6 @@
             sel.innerHTML = mod
                 ? '<option value="">Sem ênfase específica</option>' + list.map(e => `<option value="${e}">${e}</option>`).join('')
                 : '<option value="">Escolha a modalidade primeiro</option>';
-        }
-
-        function updateFinanceiroSelects() {
-            const select = document.getElementById('finClient');
-            select.innerHTML = '<option value="">Selecione...</option>';
-            data.clients.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.name;
-                select.appendChild(option);
-            });
-        }
-
-        function addTransaction() {
-            const clientId = document.getElementById('finClient').value;
-            const amount = parseFloat(document.getElementById('finAmount').value);
-            const type = document.getElementById('finType').value;
-
-            if (!clientId || !amount) {
-                alert('Preencha cliente e valor');
-                return;
-            }
-
-            data.transactions.push({
-                id: 't_' + Date.now(),
-                clientId,
-                amount,
-                type,
-                date: getTodayDate(),
-                createdAt: new Date().toISOString()
-            });
-
-            saveData();
-            document.getElementById('finAmount').value = '';
-            document.getElementById('finClient').value = '';
-            renderFinanceiro();
-        }
-
-        function renderTransactions() {
-            const container = document.getElementById('transactionsList');
-            const transactions = data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20);
-
-            if (transactions.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Nenhuma transação</div>';
-                return;
-            }
-
-            container.innerHTML = transactions.map(t => {
-                const client = data.clients.find(c => c.id === t.clientId);
-                return `
-                    <div class="list-item">
-                        <div class="list-item-content">
-                            <div class="list-item-title">${client?.name || 'Desconhecido'}</div>
-                            <div class="list-item-subtitle">${t.type} • ${new Date(t.date).toLocaleDateString('pt-BR')}</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 600; color: var(--success);">+R$ ${t.amount.toFixed(2)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         // ============================================
@@ -5304,9 +5983,9 @@
             renderDayPicker('plannerAddDays', dias);
         }
 
-        function openPlannerAdd(day) {
+        function openPlannerAdd(day, time) {
             if (!data.clients.length) { alert('Cadastre um cliente antes de montar a agenda.'); return; }
-            document.getElementById('plannerAddTime').value = '';
+            document.getElementById('plannerAddTime').value = time || '';
             const sc = document.getElementById('plannerAddScope');
             if (sc) sc.value = 'fixo';
             renderDayPicker('plannerAddDays', day ? [day] : []);
@@ -5998,6 +6677,315 @@
                     </div>`).join('')}`;
 
             document.getElementById('plannerAiModal').classList.add('active');
+        }
+
+
+        // ============================================
+        // PERGUNTAR AO ASSISTENTE
+        // Interpreta a pergunta em português e responde a partir da agenda real.
+        // Sem invenção: tudo sai de data.clients / commitments / exceptions / sessions.
+        // ============================================
+
+        const JANELA_PADRAO = { de: 6 * 60, ate: 21 * 60 };   // 06:00–21:00
+        const PASSO_BUSCA = 15;                               // minutos
+
+        const DIA_ALIASES = {
+            segunda: ['segunda', 'segunda-feira', 'seg'],
+            terca:   ['terça', 'terca', 'terça-feira', 'terca-feira', 'ter'],
+            quarta:  ['quarta', 'quarta-feira', 'qua'],
+            quinta:  ['quinta', 'quinta-feira', 'qui'],
+            sexta:   ['sexta', 'sexta-feira', 'sex'],
+            sabado:  ['sábado', 'sabado', 'sab'],
+            domingo: ['domingo', 'dom']
+        };
+
+        function semAcento(t) {
+            return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        // ---- Interpretação da pergunta ----
+        function lerPergunta(txt) {
+            const t = semAcento(txt);
+            const q = { texto: txt.trim(), dur: null, dias: [], turno: null, cliente: null, tipo: 'encaixe' };
+
+            // duração
+            let m = t.match(/(\d+)\s*(h|hora|horas)\s*(?:e\s*)?(\d+)?\s*(min|minutos)?/);
+            if (m) q.dur = Number(m[1]) * 60 + (Number(m[3]) || 0);
+            if (!q.dur) { m = t.match(/(\d+)\s*(min|minuto|minutos)/); if (m) q.dur = Number(m[1]); }
+            if (!q.dur && /\bmeia hora\b/.test(t)) q.dur = 30;
+            if (!q.dur && /\bhora e meia\b/.test(t)) q.dur = 90;
+
+            // dias citados
+            Object.entries(DIA_ALIASES).forEach(([k, nomes]) => {
+                if (nomes.some(n => new RegExp('\\b' + semAcento(n) + '\\b').test(t))) q.dias.push(k);
+            });
+            if (/fim de semana|final de semana/.test(t)) q.dias.push('sabado', 'domingo');
+            if (/dias? uteis|durante a semana|semana util/.test(t)) q.dias.push('segunda','terca','quarta','quinta','sexta');
+            q.dias = [...new Set(q.dias)];
+
+            // turno
+            if (/\bmanha\b|\bcedo\b|de manha|pela manha/.test(t)) q.turno = 'manha';
+            else if (/\btarde\b|a tarde|de tarde/.test(t)) q.turno = 'tarde';
+            else if (/\bnoite\b|a noite|de noite|fim do dia|final do dia/.test(t)) q.turno = 'noite';
+
+            // cliente citado
+            const nomes = (data.clients || []).map(c => ({ c, n: semAcento(c.name) }))
+                .sort((a, b) => b.n.length - a.n.length);
+            const achou = nomes.find(x => x.n.length >= 3 && t.includes(x.n.split(' ')[0]) && x.n.split(' ')[0].length >= 4)
+                       || nomes.find(x => x.n.length >= 3 && t.includes(x.n));
+            if (achou) q.cliente = achou.c;
+
+            // tipo de pergunta
+            if (/quando|que dia|que hora|horario d[eo]|treina/.test(t) && q.cliente) q.tipo = 'agenda-cliente';
+            else if (/mais (livre|vazio|folgado)|menos (cheio|ocupado)|dia livre/.test(t)) q.tipo = 'dia-livre';
+            else if (/mais (cheio|ocupado|carregado)|pesado/.test(t)) q.tipo = 'dia-cheio';
+            else if (/quantas? horas|quanto (eu )?trabalho|carga horaria|total de atendimentos|quantos atendimentos/.test(t)) q.tipo = 'resumo';
+            else if (/buraco|janela|ocios|vazio entre|intervalo/.test(t)) q.tipo = 'buracos';
+            else if (/livre|vago|disponivel|disponibilidade|encaix|melhor (dia|horario|hora)|onde (eu )?ponho|onde coloco|cab[e]|marcar|agendar|colocar/.test(t)) q.tipo = 'encaixe';
+
+            if (!q.dur) q.dur = SESSION_MIN;
+            return q;
+        }
+
+        // ---- Ocupação de um dia, em intervalos [ini, fim) ----
+        function ocupacaoDoDia(day) {
+            return agendaOfDay(day).map(e => {
+                const ini = toMin(e.time);
+                return {
+                    ini, fim: ini + SESSION_MIN,
+                    nome: e.kind === 'cliente' ? e.client.name : e.commitment.title,
+                    kind: e.kind
+                };
+            }).sort((a, b) => a.ini - b.ini);
+        }
+
+        // Janela de trabalho: a do próprio treinador, deduzida da agenda
+        function janelaDeTrabalho() {
+            const todos = DAY_ORDER.flatMap(d => ocupacaoDoDia(d));
+            if (!todos.length) return { ...JANELA_PADRAO };
+            const de = Math.min(...todos.map(o => o.ini));
+            const ate = Math.max(...todos.map(o => o.fim));
+            return {
+                de: Math.max(JANELA_PADRAO.de, Math.min(de, JANELA_PADRAO.de + 120)),
+                ate: Math.min(JANELA_PADRAO.ate, Math.max(ate, JANELA_PADRAO.ate - 120))
+            };
+        }
+
+        // ---- Busca de horários livres ----
+        function buscarVagas(q) {
+            const jan = janelaDeTrabalho();
+            const diasAlvo = q.dias.length ? q.dias : DAY_ORDER;
+            const vagas = [];
+
+            diasAlvo.forEach(day => {
+                const ocup = ocupacaoDoDia(day);
+                const primeiro = ocup.length ? ocup[0].ini : null;
+                const ultimo = ocup.length ? ocup[ocup.length - 1].fim : null;
+
+                for (let ini = jan.de; ini + q.dur <= jan.ate; ini += PASSO_BUSCA) {
+                    const fim = ini + q.dur;
+                    if (ocup.some(o => ini < o.fim && fim > o.ini)) continue;      // colide
+                    // o bloco inteiro tem que caber no turno pedido, nao so o inicio
+                    if (q.turno && (shiftOf(fromMin(ini)) !== q.turno || shiftOf(fromMin(fim - 1)) !== q.turno)) continue;
+
+                    // ---- pontuação ----
+                    let score = 0;
+                    const motivos = [];      // pontos a favor
+                    const ressalvas = [];    // pontos contra — mostrados separados
+
+                    const colaAntes = ocup.find(o => o.fim === ini);
+                    const colaDepois = ocup.find(o => o.ini === fim);
+
+                    if (colaAntes && colaDepois) {
+                        score += 60; motivos.push(`fecha o vão entre ${colaAntes.nome} e ${colaDepois.nome}`);
+                    } else if (colaAntes) {
+                        score += 40; motivos.push(`emenda logo depois de ${colaAntes.nome}`);
+                    } else if (colaDepois) {
+                        score += 40; motivos.push(`emenda logo antes de ${colaDepois.nome}`);
+                    }
+
+                    // preenche uma janela ociosa existente, mesmo sem colar
+                    const antes = ocup.filter(o => o.fim <= ini).pop();
+                    const depois = ocup.find(o => o.ini >= fim);
+                    if (!colaAntes && !colaDepois && antes && depois) {
+                        score += 25; motivos.push('aproveita uma janela ociosa que já existe');
+                    }
+
+                    // não estica o dia
+                    if (primeiro !== null && ini >= primeiro && fim <= ultimo) {
+                        score += 15;
+                    } else if (primeiro !== null) {
+                        const estica = Math.max(0, primeiro - ini) + Math.max(0, fim - ultimo);
+                        score -= Math.round(estica / 15) * 4;
+                        // só é "esticar o dia" se o dia já for cheio; com 1 ou 2 compromissos
+                        // o correto é mostrar o contexto, não uma advertência
+                        if (estica >= 60) {
+                            if (ocup.length >= 3) {
+                                ressalvas.push(`estica o dia em ${(estica / 60).toFixed(1).replace('.', ',')}h`);
+                            } else {
+                                motivos.push(`o dia só tem ${ocup.length} ${ocup.length === 1 ? 'compromisso' : 'compromissos'}: ${ocup.map(o => o.ini).map(fromMin).join(', ')}`);
+                            }
+                        }
+                    }
+
+                    // dia vazio: bom se ele pediu, ruim se não
+                    if (!ocup.length) {
+                        if (q.dias.includes(day)) { score += 10; motivos.push('dia todo livre'); }
+                        else { score -= 30; ressalvas.push('abriria um dia que hoje está livre'); }
+                    }
+
+                    // o próprio cliente já treina nesse dia
+                    if (q.cliente) {
+                        const dele = ocup.filter(o => o.nome === q.cliente.name);
+                        if (dele.length) ressalvas.push(`${q.cliente.name} já treina neste dia às ${dele.map(o => fromMin(o.ini)).join(', ')}`);
+                    }
+
+                    // dias mais leves primeiro
+                    score -= ocup.length * 2;
+
+                    // horário redondo é mais fácil de combinar
+                    if (ini % 60 === 0) score += 6;
+                    else if (ini % 30 === 0) score += 3;
+
+                    if (q.turno && shiftOf(fromMin(ini)) === q.turno) score += 8;
+
+                    vagas.push({ day, ini, fim, score, motivos, ressalvas, ocupNoDia: ocup.length });
+                }
+            });
+
+            // melhor vaga por dia, depois as melhores no geral
+            const porDia = {};
+            vagas.forEach(v => { if (!porDia[v.day] || v.score > porDia[v.day].score) porDia[v.day] = v; });
+            const melhores = Object.values(porDia).sort((a, b) => b.score - a.score);
+
+            // completa com segundas opções dos dias mais bem pontuados
+            const extras = vagas
+                .filter(v => !melhores.includes(v))
+                .filter(v => melhores.slice(0, 2).some(m => m.day === v.day))
+                .filter(v => melhores.every(m => m.day !== v.day || Math.abs(m.ini - v.ini) >= 90))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 2);
+
+            return [...melhores, ...extras].sort((a, b) => b.score - a.score).slice(0, 5);
+        }
+
+        function durTexto(min) {
+            if (min % 60 === 0) return `${min / 60}h`;
+            if (min > 60) return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
+            return `${min} min`;
+        }
+
+        // ---- Resposta ----
+        function responderPergunta() {
+            const campo = document.getElementById('aiAsk');
+            const box = document.getElementById('aiAnswer');
+            const txt = (campo.value || '').trim();
+            if (!txt) { box.innerHTML = ''; return; }
+
+            const q = lerPergunta(txt);
+            let html = '';
+
+            if (q.tipo === 'agenda-cliente') {
+                const c = q.cliente;
+                const sched = sortSchedule(c.schedule || []);
+                html = sched.length
+                    ? `<p><strong>${c.name}</strong> está na agenda fixa em:</p><ul>${
+                        sched.map(s => `<li>${DAYS[s.day]} às ${s.time}</li>`).join('')}</ul>`
+                    : `<p><strong>${c.name}</strong> ainda não tem dia e horário no planner.</p>`;
+                const extras = exceptionsThisWeek().filter(e => e.kind === 'cliente' && e.refId === c.id);
+                if (extras.length) {
+                    html += `<p style="margin-top:8px;">Nesta semana há ${extras.length} alteração(ões): ${
+                        extras.map(e => `${e.type === 'extra' ? 'encaixe' : 'cancelado'} ${DAYS[e.day]} ${e.time}`).join(' · ')}.</p>`;
+                }
+            }
+
+            else if (q.tipo === 'dia-livre' || q.tipo === 'dia-cheio') {
+                const carga = DAY_ORDER.map(d => ({ d, n: agendaOfDay(d).length }));
+                const ord = q.tipo === 'dia-livre'
+                    ? [...carga].sort((a, b) => a.n - b.n)
+                    : [...carga].sort((a, b) => b.n - a.n);
+                html = `<p>${q.tipo === 'dia-livre' ? 'Do mais leve ao mais cheio' : 'Do mais cheio ao mais leve'}:</p>
+                    <ul>${ord.map(x => `<li>${DAYS[x.d]} — ${x.n} compromisso(s)</li>`).join('')}</ul>`;
+            }
+
+            else if (q.tipo === 'resumo') {
+                const n = DAY_ORDER.reduce((a, d) => a + agendaOfDay(d).filter(e => e.kind === 'cliente').length, 0);
+                const nc = DAY_ORDER.reduce((a, d) => a + agendaOfDay(d).filter(e => e.kind === 'compromisso').length, 0);
+                const h = (n * SESSION_MIN) / 60;
+                html = `<p><strong>${n} atendimentos</strong> e ${nc} compromisso(s) pessoais nesta semana — cerca de
+                    <strong>${h.toFixed(1).replace('.', ',')}h</strong> de trabalho direto,
+                    considerando ${SESSION_MIN} min por sessão.</p>`;
+            }
+
+            else if (q.tipo === 'buracos') {
+                const linhas = [];
+                const vazios = [];
+                DAY_ORDER.forEach(day => {
+                    const o = ocupacaoDoDia(day);
+                    for (let i = 1; i < o.length; i++) {
+                        const gap = o[i].ini - o[i - 1].fim;
+                        if (gap < 30) continue;
+                        const faixa = `${DAYS[day]} · ${fromMin(o[i - 1].fim)}–${fromMin(o[i].ini)} (${durTexto(gap)})`;
+                        // acima de 4h não é uma janela entre atendimentos, é um dia praticamente vago
+                        if (gap > 240) vazios.push(faixa); else linhas.push(faixa);
+                    }
+                });
+                html = linhas.length
+                    ? `<p>Janelas livres entre compromissos:</p><ul>${linhas.map(l => `<li>${l}</li>`).join('')}</ul>`
+                    : '<p>Não há janelas ociosas curtas entre compromissos nesta semana.</p>';
+                if (vazios.length) {
+                    html += `<p style="margin-top:10px;">Blocos longos praticamente vagos — mais fácil concentrar atendimentos aqui do que abrir um dia novo:</p>
+                        <ul>${vazios.map(l => `<li>${l}</li>`).join('')}</ul>`;
+                }
+            }
+
+            else {
+                const vagas = buscarVagas(q);
+                if (!vagas.length) {
+                    html = `<p>Não encontrei ${durTexto(q.dur)} livres${
+                        q.turno ? ' na ' + SHIFTS.find(s => s.key === q.turno).label.toLowerCase() : ''}${
+                        q.dias.length ? ' em ' + q.dias.map(d => DAYS[d]).join(', ') : ''
+                    } dentro da sua janela de trabalho. Tente outro turno ou outra duração.</p>`;
+                } else {
+                    const filtro = [
+                        durTexto(q.dur),
+                        q.turno ? 'na ' + SHIFTS.find(s => s.key === q.turno).label.toLowerCase() : '',
+                        q.dias.length ? 'em ' + q.dias.map(d => DAYS[d]).join(', ') : '',
+                        q.cliente ? 'para ' + q.cliente.name : ''
+                    ].filter(Boolean).join(' · ');
+
+                    html = `<p style="margin-bottom:10px;">Melhores horários para <strong>${filtro}</strong>:</p>
+                        ${vagas.map((v, i) => `
+                            <div class="ai-slot${i === 0 ? ' top' : ''}">
+                                <div class="ai-slot-when">
+                                    ${i === 0 ? '<span class="ai-slot-tag">melhor</span>' : ''}
+                                    ${DAYS[v.day]} · ${fromMin(v.ini)}–${fromMin(v.fim)}
+                                </div>
+                                <div class="ai-slot-why">${
+                                    v.motivos.length ? v.motivos.join(' · ') : `dia com ${v.ocupNoDia} compromisso(s)`
+                                }</div>
+                                ${v.ressalvas.length ? `<div class="ai-slot-warn">⚠ ${v.ressalvas.join(' · ')}</div>` : ''}
+                                <button class="chart-toggle" onclick="agendarVaga('${v.day}', '${fromMin(v.ini)}')">Agendar aqui →</button>
+                            </div>`).join('')}`;
+                }
+            }
+
+            box.innerHTML = `<div class="ai-answer-inner">${html}</div>`;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function agendarVaga(day, time) {
+            closeModal('plannerAiModal');
+            openPlannerAdd(day, time);
+        }
+
+        function aiAskKey(ev) {
+            if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); responderPergunta(); }
+        }
+
+        function aiExemplo(txt) {
+            document.getElementById('aiAsk').value = txt;
+            responderPergunta();
         }
 
         // ============================================
