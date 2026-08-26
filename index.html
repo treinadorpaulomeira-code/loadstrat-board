@@ -660,6 +660,47 @@
 
         .planner-slot.extra { border-left-style: dashed; }
 
+        /* Escolha do que marcar numa data do calendário */
+        .dia-resumo {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            max-height: 190px;
+            overflow-y: auto;
+        }
+        .dia-ja-tem {
+            font-size: 0.75rem; letter-spacing: 0.7px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 8px;
+        }
+        .dia-item {
+            color: var(--text-secondary); font-size: 0.88rem;
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .dia-item:last-child { border-bottom: none; }
+        .dia-item strong { color: var(--primary); margin-right: 8px; font-variant-numeric: tabular-nums; }
+        .dia-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .dia-acoes button { width: 100%; }
+        .month-cell { cursor: pointer; }
+        .month-cell:hover { background: rgba(212,175,55,0.06); }
+        .month-cell.fora { cursor: default; }
+        .month-cell.fora:hover { background: transparent; }
+
+        .campo-dica {
+            margin-top: 7px;
+            font-size: 0.78rem;
+            color: var(--primary);
+            min-height: 1em;
+        }
+        .campo-dica:empty { display: none; }
+
+        .badge-extra.data {
+            background: rgba(212,175,55,0.2);
+            color: var(--primary);
+            border-color: rgba(212,175,55,0.5);
+        }
+
         .badge-extra {
             display: inline-block; margin-left: 4px; padding: 1px 6px;
             font-size: 0.62rem; font-weight: 600; letter-spacing: 0.4px;
@@ -2671,6 +2712,24 @@
         </div>
     </div>
 
+    <!-- MODAL: O QUE MARCAR NESTA DATA -->
+    <div id="novoNaDataModal" class="modal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <div class="modal-title" id="novoNaDataTitulo">Data</div>
+                <button class="modal-close" onclick="closeModal('novoNaDataModal')">✕</button>
+            </div>
+            <div id="novoNaDataResumo" class="dia-resumo"></div>
+            <div class="dia-acoes">
+                <button onclick="novoNaDataComo('atendimento')">＋ Atendimento</button>
+                <button class="btn-secondary" onclick="novoNaDataComo('compromisso')">📌 Compromisso</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('novoNaDataModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ASSISTENTE DE AGENDA -->
     <div id="plannerAiModal" class="modal">
         <div class="modal-content" style="max-width: 720px;">
@@ -2870,7 +2929,7 @@
                 <label>Horário</label>
                 <input type="time" id="commitmentTime">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="commitmentDaysBox">
                 <label>Dias da semana <span style="color: var(--text-muted); font-weight: 400;">— marque quantos quiser</span></label>
                 <div class="day-picker" id="commitmentDays"></div>
                 <div class="day-presets">
@@ -2887,10 +2946,16 @@
 
             <div class="form-group">
                 <label>Vale para</label>
-                <select id="commitmentScope">
+                <select id="commitmentScope" onchange="onCommitmentScopeChange()">
                     <option value="fixo">Toda semana — entra na agenda fixa</option>
                     <option value="semana">Só esta semana — compromisso pontual</option>
+                    <option value="data">Em uma data específica — escolher no calendário</option>
                 </select>
+            </div>
+            <div class="form-group" id="commitmentDateBox" style="display:none;">
+                <label>Data</label>
+                <input type="date" id="commitmentDate" onchange="atualizarDicaData('commitmentDate','commitmentDateHint')">
+                <div class="campo-dica" id="commitmentDateHint"></div>
             </div>
             <div class="modal-footer">
                 <span id="commitmentHint" class="save-hint"></span>
@@ -2940,7 +3005,7 @@
                 <input type="time" id="plannerAddTime">
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="plannerAddDaysBox">
                 <label>Dias da semana <span style="color: var(--text-muted); font-weight: 400;">— marque quantos quiser</span></label>
                 <div class="day-picker" id="plannerAddDays"></div>
                 <div class="day-presets">
@@ -2954,10 +3019,16 @@
 
             <div class="form-group">
                 <label>Vale para</label>
-                <select id="plannerAddScope">
+                <select id="plannerAddScope" onchange="onPlannerAddScopeChange()">
                     <option value="fixo">Toda semana — entra na agenda fixa</option>
                     <option value="semana">Só esta semana — encaixe pontual</option>
+                    <option value="data">Em uma data específica — escolher no calendário</option>
                 </select>
+            </div>
+            <div class="form-group" id="plannerAddDateBox" style="display:none;">
+                <label>Data</label>
+                <input type="date" id="plannerAddDate" onchange="atualizarDicaData('plannerAddDate','plannerAddDateHint')">
+                <div class="campo-dica" id="plannerAddDateHint"></div>
             </div>
             <div class="modal-footer">
                 <span id="plannerAddHint" class="save-hint"></span>
@@ -3983,6 +4054,124 @@
         }
 
         // ============================================
+        // EVENTOS COM DATA
+        // Terceira camada da agenda: além da fixa (toda semana) e das exceções
+        // (só na semana corrente), um evento marcado para UMA data específica —
+        // semana que vem, mês que vem, qualquer dia do calendário.
+        // ============================================
+
+        function ensureDated() {
+            if (!Array.isArray(data.dated)) { data.dated = []; return true; }
+            return false;
+        }
+
+        function addDated(ev) {
+            ensureDated();
+            const novo = { ...ev, id: 'dt_' + Date.now() + Math.random().toString(36).slice(2, 6) };
+            data.dated.push(novo);
+            saveData();
+            return novo;
+        }
+
+        function removeDated(id) {
+            ensureDated();
+            data.dated = data.dated.filter(e => e.id !== id);
+            saveData();
+        }
+
+        // Eventos marcados para uma data exata (YYYY-MM-DD)
+        function datedOfIso(iso) {
+            ensureDated();
+            const out = [];
+            data.dated.filter(e => e.date === iso).forEach(e => {
+                if (e.kind === 'cliente') {
+                    const c = (data.clients || []).find(x => x.id === e.refId);
+                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id, dataFixa: e.date });
+                } else {
+                    out.push({
+                        kind: 'compromisso',
+                        commitment: { id: e.id, title: e.title, time: e.time, note: e.note || '' },
+                        time: e.time, fixo: false, exId: e.id, dataFixa: e.date
+                    });
+                }
+            });
+            return out;
+        }
+
+        // Data (YYYY-MM-DD) do dia da semana pedido, dentro da semana corrente
+        function isoDoDiaNaSemanaAtual(day) {
+            const segunda = new Date(currentWeekId() + 'T00:00:00');
+            const i = DAY_ORDER.indexOf(day);
+            if (i < 0) return null;
+            const d = new Date(segunda);
+            d.setDate(d.getDate() + i);
+            return d.toISOString().slice(0, 10);
+        }
+
+        function rotuloData(iso) {
+            const d = new Date(iso + 'T00:00:00');
+            const s = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        function rotuloDataCurto(iso) {
+            return new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+
+        // Remove um encaixe: pode ser exceção da semana ou evento com data
+        function removeExtra(id) {
+            const ehData = String(id).startsWith('dt_');
+            if (!confirm(ehData ? 'Remover este compromisso da data marcada?' : 'Remover este encaixe desta semana?')) return;
+            if (ehData) removeDated(id); else removeException(id);
+            renderPlanner();
+            renderDashboard();
+        }
+
+        // Tocar num dia do calendário abre a escolha do que marcar naquela data
+        let dataEscolhida = null;
+
+        function novoNaData(iso) {
+            dataEscolhida = iso;
+            document.getElementById('novoNaDataTitulo').textContent = rotuloData(iso);
+            const evs = agendaOfDate(new Date(iso + 'T00:00:00'));
+            document.getElementById('novoNaDataResumo').innerHTML = evs.length
+                ? `<div class="dia-ja-tem">Já tem neste dia:</div>` + evs.map(e =>
+                    `<div class="dia-item"><strong>${e.time}</strong> ${e.kind === 'cliente' ? e.client.name : e.commitment.title}</div>`).join('')
+                : '<div class="dia-ja-tem">Nada marcado neste dia.</div>';
+            document.getElementById('novoNaDataModal').classList.add('active');
+        }
+
+        function novoNaDataComo(tipo) {
+            const iso = dataEscolhida;
+            closeModal('novoNaDataModal');
+            if (!iso) return;
+            if (tipo === 'atendimento') {
+                openPlannerAdd('');
+                document.getElementById('plannerAddScope').value = 'data';
+                onPlannerAddScopeChange();
+                document.getElementById('plannerAddDate').value = iso;
+                atualizarDicaData('plannerAddDate', 'plannerAddDateHint');
+            } else {
+                openCommitmentAdd('');
+                document.getElementById('commitmentScope').value = 'data';
+                onCommitmentScopeChange();
+                document.getElementById('commitmentDate').value = iso;
+                atualizarDicaData('commitmentDate', 'commitmentDateHint');
+            }
+        }
+
+        // Depois de salvar em outra semana, mostra onde o item caiu
+        function confirmarDataFora(iso, oQue) {
+            const naSemana = isoDoDiaNaSemanaAtual(DAY_ORDER[(new Date(iso + 'T00:00:00').getDay() + 6) % 7]) === iso;
+            if (naSemana) return;                       // caiu nesta semana, já aparece
+            if (confirm(`${oQue} marcado para ${rotuloData(iso)}.\n\nComo não é desta semana, ele não aparece na visão semanal.\n\nAbrir o calendário do mês nessa data?`)) {
+                monthCursor = new Date(new Date(iso + 'T00:00:00').getFullYear(), new Date(iso + 'T00:00:00').getMonth(), 1);
+                plannerView = 'mes';
+                renderPlanner();
+            }
+        }
+
+        // ============================================
         // TIPO DE ATENDIMENTO — presencial x consultoria online
         // ============================================
         // Paleta validada para superfície escura #1a1a1a (luminosidade, chroma, daltonismo)
@@ -4085,6 +4274,10 @@
                                time: e.time, fixo: false, exId: e.id });
                 }
             });
+
+            // Eventos marcados para uma data exata que caem neste dia da semana corrente
+            const isoDesteDia = isoDoDiaNaSemanaAtual(day);
+            if (isoDesteDia) datedOfIso(isoDesteDia).forEach(e => out.push(e));
 
             return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
         }
@@ -5975,12 +6168,13 @@
             const iso = dateObj.toISOString().slice(0, 10);
             const semanaDaData = weekKey(iso)?.toISOString().slice(0, 10);
             const ehSemanaCorrente = semanaDaData === currentWeekId();
-            // Fora da semana corrente as exceções não existem: vale a agenda fixa
+            // Fora da semana corrente as exceções não existem: vale a agenda fixa + os eventos com data
             return ehSemanaCorrente ? agendaOfDay(day) : (() => {
                 const out = appointmentsOfDay(day).map(a => ({ ...a, fixo: true }));
                 (data.commitments || []).forEach(cm => {
                     if (cm.day === day) out.push({ kind: 'compromisso', commitment: cm, time: cm.time, fixo: true });
                 });
+                datedOfIso(iso).forEach(e => out.push(e));
                 return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
             })();
         }
@@ -6031,7 +6225,8 @@
                         const mostra = evs.slice(0, 3);
                         const resto = evs.length - mostra.length;
                         return `
-                            <div class="month-cell ${foraDoMes ? 'fora' : ''} ${ehHoje ? 'hoje' : ''}">
+                            <div class="month-cell ${foraDoMes ? 'fora' : ''} ${ehHoje ? 'hoje' : ''}"
+                                 onclick="novoNaData('${iso}')" title="Marcar algo em ${rotuloData(iso)}">
                                 <div class="month-daynum">${d.getDate()}</div>
                                 ${mostra.map(e => `
                                     <div class="month-item ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}"
@@ -6133,7 +6328,7 @@
                                                 <div class="planner-slot ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}">
                                                     <div class="planner-slot-top">
                                                         <span class="planner-slot-time">${e.time}</span>
-                                                        <span class="planner-slot-mods">${icones}${e.fixo ? '' : ' <span class="badge-extra">só esta semana</span>'}</span>
+                                                        <span class="planner-slot-mods">${icones}${e.fixo ? '' : (e.dataFixa ? ` <span class="badge-extra data">${rotuloDataCurto(e.dataFixa)}</span>` : ' <span class="badge-extra">só esta semana</span>')}</span>
                                                         <span class="planner-slot-actions">
                                                             ${e.fixo ? `
                                                                 <button title="Cancelar só nesta semana"
@@ -6168,13 +6363,6 @@
             renderDashboard();
         }
 
-        function removeExtra(exId) {
-            if (!confirm('Remover este encaixe desta semana?')) return;
-            removeException(exId);
-            renderPlanner();
-            renderDashboard();
-        }
-
         // ---- Compromissos pessoais ----
         let editingCommitmentId = null;
 
@@ -6187,6 +6375,9 @@
             renderDayPicker('commitmentDays', day ? [day] : []);
             const sc = document.getElementById('commitmentScope');
             if (sc) sc.value = 'fixo';
+            const dc = document.getElementById('commitmentDate');
+            if (dc) dc.value = '';
+            onCommitmentScopeChange();
             const hint = document.getElementById('commitmentHint');
             hint.textContent = ''; hint.className = 'save-hint';
             document.getElementById('commitmentModal').classList.add('active');
@@ -6203,12 +6394,49 @@
             renderDayPicker('commitmentDays', [cm.day]);
             const sc = document.getElementById('commitmentScope');
             if (sc) sc.value = 'fixo';
+            const dc = document.getElementById('commitmentDate');
+            if (dc) dc.value = '';
+            onCommitmentScopeChange();
             const hint = document.getElementById('commitmentHint');
             hint.textContent = ''; hint.className = 'save-hint';
             document.getElementById('commitmentModal').classList.add('active');
         }
 
         function commitmentPreset(dias) { renderDayPicker('commitmentDays', dias); }
+
+        // Alterna entre "dias da semana" e "uma data no calendário"
+        function alternarEscopoData(escopo, idsBox, idsDias, idData, idDica) {
+            const porData = escopo === 'data';
+            const box = document.getElementById(idsBox);
+            const dias = document.getElementById(idsDias);
+            if (box) box.style.display = porData ? '' : 'none';
+            if (dias) dias.style.display = porData ? 'none' : '';
+            const campo = document.getElementById(idData);
+            if (porData && campo && !campo.value) campo.value = getTodayDate();
+            atualizarDicaData(idData, idDica);
+        }
+
+        function atualizarDicaData(idData, idDica) {
+            const campo = document.getElementById(idData);
+            const dica = document.getElementById(idDica);
+            if (!campo || !dica) return;
+            if (!campo.value) { dica.textContent = ''; return; }
+            const hoje = getTodayDate();
+            const dias = Math.round((new Date(campo.value + 'T00:00:00') - new Date(hoje + 'T00:00:00')) / 86400000);
+            const quando = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã'
+                : dias > 0 ? `em ${dias} dias` : `${Math.abs(dias)} dia(s) atrás`;
+            dica.textContent = `${rotuloData(campo.value)} — ${quando}`;
+        }
+
+        function onCommitmentScopeChange() {
+            alternarEscopoData(document.getElementById('commitmentScope').value,
+                'commitmentDateBox', 'commitmentDaysBox', 'commitmentDate', 'commitmentDateHint');
+        }
+
+        function onPlannerAddScopeChange() {
+            alternarEscopoData(document.getElementById('plannerAddScope').value,
+                'plannerAddDateBox', 'plannerAddDaysBox', 'plannerAddDate', 'plannerAddDateHint');
+        }
 
         function saveCommitment() {
             const title = (document.getElementById('commitmentTitle').value || '').trim();
@@ -6217,6 +6445,21 @@
             const dias = readDayPicker('commitmentDays');
             const escopo = (document.getElementById('commitmentScope') || {}).value || 'fixo';
             const hint = document.getElementById('commitmentHint');
+
+            if (escopo === 'data') {
+                const iso = document.getElementById('commitmentDate').value;
+                if (!title || !time || !iso) {
+                    hint.textContent = 'Preencha o nome, o horário e a data.';
+                    hint.className = 'save-hint error';
+                    return;
+                }
+                addDated({ kind: 'compromisso', title, note, date: iso, time });
+                closeModal('commitmentModal');
+                renderPlanner();
+                renderDashboard();
+                confirmarDataFora(iso, `"${title}"`);
+                return;
+            }
 
             if (!title || !time || !dias.length) {
                 hint.textContent = 'Preencha o nome, o horário e ao menos um dia.';
@@ -6298,6 +6541,9 @@
             document.getElementById('plannerAddTime').value = time || '';
             const sc = document.getElementById('plannerAddScope');
             if (sc) sc.value = 'fixo';
+            const dp = document.getElementById('plannerAddDate');
+            if (dp) dp.value = '';
+            onPlannerAddScopeChange();
             renderDayPicker('plannerAddDays', day ? [day] : []);
             const hint = document.getElementById('plannerAddHint');
             hint.textContent = ''; hint.className = 'save-hint';
@@ -6313,6 +6559,22 @@
             const dias = readDayPicker('plannerAddDays');
             const time = document.getElementById('plannerAddTime').value;
             const hint = document.getElementById('plannerAddHint');
+
+            if ((document.getElementById('plannerAddScope') || {}).value === 'data') {
+                const iso = document.getElementById('plannerAddDate').value;
+                const c0 = data.clients.find(x => x.id === clientId);
+                if (!clientId || !time || !iso) {
+                    hint.textContent = 'Escolha o cliente, o horário e a data.';
+                    hint.className = 'save-hint error';
+                    return;
+                }
+                addDated({ kind: 'cliente', refId: clientId, date: iso, time });
+                closeModal('plannerAddModal');
+                renderPlanner();
+                renderDashboard();
+                confirmarDataFora(iso, c0 ? c0.name : 'Atendimento');
+                return;
+            }
 
             if (!clientId || !dias.length || !time) {
                 hint.textContent = 'Escolha o cliente, o horário e ao menos um dia.';
