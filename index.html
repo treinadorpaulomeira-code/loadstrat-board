@@ -660,6 +660,51 @@
 
         .planner-slot.extra { border-left-style: dashed; }
 
+        /* ============ AULA EM DUPLA / TURMA ============ */
+        .client-picker {
+            display: flex; flex-direction: column; gap: 6px;
+            max-height: 210px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 8px; background: rgba(255,255,255,0.02);
+        }
+        .client-pill {
+            display: flex; align-items: center; gap: 9px;
+            padding: 9px 11px; border-radius: 8px;
+            font-size: 0.88rem; color: var(--text-secondary);
+            border: 1px solid transparent; cursor: pointer;
+            user-select: none; transition: all 0.15s ease;
+        }
+        .client-pill:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .client-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .client-pill:has(input:checked) {
+            background: rgba(212,175,55,0.14);
+            border-color: var(--primary);
+            color: var(--primary); font-weight: 600;
+        }
+        .client-dot {
+            width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+        }
+        .client-pill:has(input:checked)::after {
+            content: '✓'; margin-left: auto; color: var(--primary); font-weight: 700;
+        }
+
+        .badge-grupo {
+            display: inline-block; padding: 1px 7px;
+            font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px;
+            text-transform: uppercase; color: #12100c;
+            background: var(--primary); border-radius: 4px; vertical-align: middle;
+        }
+        .planner-slot.grupo { border-left-width: 4px; }
+        .grupo-membros { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+        .grupo-sair {
+            padding: 2px 8px; font-size: 0.68rem; font-weight: 500;
+            color: var(--text-muted); background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border); border-radius: 999px;
+            cursor: pointer; text-transform: none; letter-spacing: 0;
+        }
+        .grupo-sair:hover { color: #e34b57; border-color: rgba(227,75,87,0.5); }
+        .month-item.grupo { font-weight: 600; }
+
         /* Escolha do que marcar numa data do calendário */
         .dia-resumo {
             background: rgba(255,255,255,0.03);
@@ -2997,8 +3042,9 @@
                 <button class="modal-close" onclick="closeModal('plannerAddModal')">✕</button>
             </div>
             <div class="form-group">
-                <label>Cliente</label>
-                <select id="plannerAddClient"></select>
+                <label>Cliente <span style="color: var(--text-muted); font-weight: 400;">— marque dois ou mais para aula em dupla</span></label>
+                <div class="client-picker" id="plannerAddClients"></div>
+                <div class="campo-dica" id="plannerAddGroupHint"></div>
             </div>
             <div class="form-group">
                 <label>Horário</label>
@@ -4054,6 +4100,171 @@
         }
 
         // ============================================
+        // AULAS EM DUPLA / TURMA
+        // Dois ou mais clientes no mesmo horário formam UMA aula.
+        // O vínculo é um id de grupo gravado em cada horário dos participantes,
+        // então cada um continua sendo um cliente independente (mensalidade,
+        // carga, relatório) — só a agenda os mostra juntos.
+        // ============================================
+
+        function novoGrupoId() {
+            return 'gr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+        }
+
+        function rotuloGrupo(n) {
+            return n === 2 ? 'Dupla' : n === 3 ? 'Trio' : `Turma de ${n}`;
+        }
+
+        // Junta num item só os clientes que compartilham grupo + horário
+        function agruparAgenda(lista) {
+            const out = [];
+            const porGrupo = {};
+
+            lista.forEach(e => {
+                if (e.kind !== 'cliente' || !e.grupo) { out.push(e); return; }
+                const chave = e.grupo + '|' + e.time;
+                if (!porGrupo[chave]) {
+                    porGrupo[chave] = {
+                        kind: 'grupo', grupo: e.grupo, time: e.time,
+                        fixo: e.fixo, dataFixa: e.dataFixa, exId: e.exId,
+                        clients: [], exIds: []
+                    };
+                    out.push(porGrupo[chave]);
+                }
+                porGrupo[chave].clients.push(e.client);
+                if (e.exId) porGrupo[chave].exIds.push(e.exId);
+            });
+
+            // Ordem estável dos nomes, independente de como foram cadastrados
+            Object.values(porGrupo).forEach(g => g.clients.sort((a, b) => a.name.localeCompare(b.name)));
+
+            // Um grupo que sobrou com uma pessoa só volta a ser atendimento normal
+            return out.map(e => {
+                if (e.kind !== 'grupo') return e;
+                if (e.clients.length === 1) {
+                    return { kind: 'cliente', client: e.clients[0], time: e.time,
+                             fixo: e.fixo, dataFixa: e.dataFixa, exId: e.exId, grupo: e.grupo };
+                }
+                return e;
+            }).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+        }
+
+        function nomesDoItem(e) {
+            if (e.kind === 'grupo') return e.clients.map(c => c.name).join(' + ');
+            return e.kind === 'cliente' ? e.client.name : e.commitment.title;
+        }
+
+        // ---- Transformar uma sobreposição existente em aula em dupla ----
+        function agruparHorario(day, time) {
+            const doDia = appointmentsOfDay(day).filter(a => a.time === time);
+            if (doDia.length < 2) return false;
+            const gid = novoGrupoId();
+            doDia.forEach(a => {
+                const slot = (a.client.schedule || []).find(s => s.day === day && s.time === time);
+                if (slot) slot.grupo = gid;
+            });
+            saveData();
+            return true;
+        }
+
+        function marcarComoDupla(day, time) {
+            const doDia = appointmentsOfDay(day).filter(a => a.time === time);
+            const nomes = doDia.map(a => a.client.name).join(' + ');
+            if (!confirm(`Juntar ${nomes} em uma aula em ${rotuloGrupo(doDia.length).toLowerCase()} em ${DAYS[day]} às ${time}?\n\nEles passam a aparecer como um atendimento só na agenda. Cada um continua com sua própria mensalidade e controle de carga.`)) return;
+            if (!agruparHorario(day, time)) { alert('Não encontrei dois clientes nesse horário.'); return; }
+            closeModal('plannerAiModal');
+            renderPlanner();
+            renderDashboard();
+            renderClientsTab();
+        }
+
+        // ---- Desfazer o grupo ----
+        function desagruparHorario(gid, day, time) {
+            if (!confirm('Separar esta aula em atendimentos individuais?')) return;
+            (data.clients || []).forEach(c => {
+                (c.schedule || []).forEach(s => {
+                    if (s.grupo === gid && s.day === day && s.time === time) delete s.grupo;
+                });
+            });
+            (data.dated || []).forEach(e => { if (e.grupo === gid) delete e.grupo; });
+            (data.exceptions || []).forEach(e => { if (e.grupo === gid) delete e.grupo; });
+            saveData();
+            renderPlanner();
+            renderDashboard();
+        }
+
+        // ---- Tirar uma pessoa da aula em grupo, mantendo as outras ----
+        function sairDoGrupo(clientId, day, time) {
+            const c = (data.clients || []).find(x => x.id === clientId);
+            if (!c) return;
+            if (!confirm(`Remover ${c.name} desta aula?\n\nOs outros participantes continuam no horário.`)) return;
+            c.schedule = (c.schedule || []).filter(s => !(s.day === day && s.time === time));
+            if (c.schedule.length) { c.day = c.schedule[0].day; c.time = c.schedule[0].time; }
+            else { c.day = ''; c.time = ''; }
+            saveData();
+            renderPlanner();
+            renderDashboard();
+            renderClientsTab();
+        }
+
+        function removerGrupoInteiro(gid, day, time) {
+            const nomes = (data.clients || []).filter(c => (c.schedule || [])
+                .some(s => s.grupo === gid && s.day === day && s.time === time)).map(c => c.name);
+            if (!confirm(`Remover a aula de ${nomes.join(' + ')} em ${DAYS[day]} às ${time} da agenda fixa?\n\nVale para todas as semanas.`)) return;
+            (data.clients || []).forEach(c => {
+                c.schedule = (c.schedule || []).filter(s => !(s.grupo === gid && s.day === day && s.time === time));
+                if (c.schedule.length) { c.day = c.schedule[0].day; c.time = c.schedule[0].time; }
+            });
+            saveData();
+            renderPlanner();
+            renderDashboard();
+            renderClientsTab();
+        }
+
+        function cancelarGrupoSemana(gid, day, time) {
+            const alvos = (data.clients || []).filter(c => (c.schedule || [])
+                .some(s => s.grupo === gid && s.day === day && s.time === time));
+            if (!alvos.length) return;
+            if (!confirm(`Cancelar a aula de ${alvos.map(c => c.name).join(' + ')} de ${DAYS[day]} às ${time} só nesta semana?\n\nNa próxima semana volta ao normal.`)) return;
+            alvos.forEach(c => addException({ type: 'cancel', kind: 'cliente', refId: c.id, day, time }));
+            renderPlanner();
+            renderDashboard();
+        }
+
+        // ---- Seletor de vários clientes ----
+        function renderClientPicker(containerId, marcados) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const set = new Set(marcados || []);
+            const lista = (data.clients || []).filter(c => !c.inativo)
+                .slice().sort((a, b) => a.name.localeCompare(b.name));
+            el.innerHTML = lista.length
+                ? lista.map(c => `
+                    <label class="client-pill">
+                        <input type="checkbox" value="${c.id}" ${set.has(c.id) ? 'checked' : ''}
+                               onchange="atualizarResumoDupla()">
+                        <span class="client-dot" style="background:${typeColor(c)}"></span>${c.name}
+                    </label>`).join('')
+                : '<div style="color:var(--text-muted); font-size:0.85rem;">Nenhum cliente cadastrado.</div>';
+        }
+
+        function readClientPicker(containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return [];
+            return Array.from(el.querySelectorAll('input:checked')).map(i => i.value);
+        }
+
+        function atualizarResumoDupla() {
+            const ids = readClientPicker('plannerAddClients');
+            const box = document.getElementById('plannerAddGroupHint');
+            if (!box) return;
+            if (ids.length < 2) { box.textContent = ''; return; }
+            const nomes = ids.map(id => (data.clients || []).find(c => c.id === id))
+                .filter(Boolean).map(c => c.name);
+            box.textContent = `${rotuloGrupo(ids.length)}: ${nomes.join(' + ')} — vão aparecer como uma aula só.`;
+        }
+
+        // ============================================
         // EVENTOS COM DATA
         // Terceira camada da agenda: além da fixa (toda semana) e das exceções
         // (só na semana corrente), um evento marcado para UMA data específica —
@@ -4086,7 +4297,7 @@
             data.dated.filter(e => e.date === iso).forEach(e => {
                 if (e.kind === 'cliente') {
                     const c = (data.clients || []).find(x => x.id === e.refId);
-                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id, dataFixa: e.date });
+                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id, dataFixa: e.date, grupo: e.grupo || null });
                 } else {
                     out.push({
                         kind: 'compromisso',
@@ -4243,7 +4454,7 @@
             const out = [];
             (data.clients || []).forEach(c => {
                 sortSchedule(c.schedule).forEach(slot => {
-                    if (slot.day === day) out.push({ kind: 'cliente', client: c, time: slot.time });
+                    if (slot.day === day) out.push({ kind: 'cliente', client: c, time: slot.time, grupo: slot.grupo || null });
                 });
             });
             return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
@@ -4268,7 +4479,7 @@
                 if (e.type !== 'extra' || e.day !== day) return;
                 if (e.kind === 'cliente') {
                     const c = (data.clients || []).find(x => x.id === e.refId);
-                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id });
+                    if (c) out.push({ kind: 'cliente', client: c, time: e.time, fixo: false, exId: e.id, grupo: e.grupo || null });
                 } else {
                     out.push({ kind: 'compromisso', commitment: { id: e.refId, title: e.title, time: e.time, note: e.note || '' },
                                time: e.time, fixo: false, exId: e.id });
@@ -4279,7 +4490,7 @@
             const isoDesteDia = isoDoDiaNaSemanaAtual(day);
             if (isoDesteDia) datedOfIso(isoDesteDia).forEach(e => out.push(e));
 
-            return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+            return agruparAgenda(out);
         }
 
         function normalizeName(n) {
@@ -5938,19 +6149,35 @@
 
             document.getElementById('nextAppointments').innerHTML = upcoming.length === 0
                 ? '<div style="color: var(--text-muted);">Nada agendado — monte a agenda no Planner.</div>'
-                : upcoming.map(a => a.kind === 'cliente' ? `
+                : upcoming.map(a => {
+                    const quando = `${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}`;
+                    if (a.kind === 'grupo') {
+                        const mods = [...new Set(a.clients.flatMap(c => c.modalities || []))]
+                            .map(m => MODALITIES[m]?.icon || '').join(' ');
+                        return `
+                    <div class="list-item" style="cursor:pointer;" onclick="openClientDetails('${a.clients[0].id}')">
+                        <div class="list-item-content">
+                            <div class="list-item-title"><span class="legend-dot cliente"></span>${nomesDoItem(a)}
+                                <span class="badge-grupo">${rotuloGrupo(a.clients.length)}</span></div>
+                            <div class="list-item-subtitle">${mods} ${quando}</div>
+                        </div>
+                    </div>`;
+                    }
+                    if (a.kind === 'cliente') return `
                     <div class="list-item" style="cursor:pointer;" onclick="openClientDetails('${a.client.id}')">
                         <div class="list-item-content">
                             <div class="list-item-title"><span class="legend-dot cliente"></span>${a.client.name}</div>
-                            <div class="list-item-subtitle">${(a.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}</div>
+                            <div class="list-item-subtitle">${(a.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join(' ')} ${quando}</div>
                         </div>
-                    </div>` : `
+                    </div>`;
+                    return `
                     <div class="list-item">
                         <div class="list-item-content">
                             <div class="list-item-title"><span class="legend-dot compromisso"></span>${a.commitment.title}</div>
-                            <div class="list-item-subtitle">📌 ${a.ordem === 0 ? 'Hoje' : DAYS[a.day]} às ${a.time}${a.commitment.note ? ' · ' + a.commitment.note : ''}</div>
+                            <div class="list-item-subtitle">📌 ${quando}${a.commitment.note ? ' · ' + a.commitment.note : ''}</div>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
         }
 
         function renderLoadTypeTabs() {
@@ -6175,7 +6402,7 @@
                     if (cm.day === day) out.push({ kind: 'compromisso', commitment: cm, time: cm.time, fixo: true });
                 });
                 datedOfIso(iso).forEach(e => out.push(e));
-                return out.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+                return agruparAgenda(out);
             })();
         }
 
@@ -6229,10 +6456,10 @@
                                  onclick="novoNaData('${iso}')" title="Marcar algo em ${rotuloData(iso)}">
                                 <div class="month-daynum">${d.getDate()}</div>
                                 ${mostra.map(e => `
-                                    <div class="month-item ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}"
-                                         title="${e.time} — ${e.kind === 'cliente' ? e.client.name : e.commitment.title}">
+                                    <div class="month-item ${e.kind === 'grupo' ? 'cliente grupo' : e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : (e.kind === 'grupo' ? ' t-' + clientType(e.clients[0]) : '')}${e.fixo ? '' : ' extra'}"
+                                         title="${e.time} — ${nomesDoItem(e)}">
                                         <span class="month-item-time">${e.time}</span>
-                                        ${e.kind === 'cliente' ? e.client.name : e.commitment.title}
+                                        ${nomesDoItem(e)}
                                     </div>`).join('')}
                                 ${resto > 0 ? `<div class="month-more">+${resto}</div>` : ''}
                             </div>`;
@@ -6268,8 +6495,11 @@
                 <div class="planner-bar">
                     <div class="planner-count">
                         ${CLIENT_TYPE_ORDER.map(k => {
-                            const n = DAY_ORDER.reduce((acc, d) => acc + agendaOfDay(d)
-                                .filter(e => e.kind === 'cliente' && clientType(e.client) === k).length, 0);
+                            const n = DAY_ORDER.reduce((acc, d) => acc + agendaOfDay(d).reduce((s, e) => {
+                                if (e.kind === 'cliente') return s + (clientType(e.client) === k ? 1 : 0);
+                                if (e.kind === 'grupo') return s + e.clients.filter(c => clientType(c) === k).length;
+                                return s;
+                            }, 0), 0);
                             return n ? `<span style="margin-right:14px;"><span class="legend-dot" style="background:${CLIENT_TYPES[k].color}"></span>${n} ${CLIENT_TYPES[k].short}</span>` : '';
                         }).join('')}
                         ${nComp ? `<span style="margin-right:14px;"><span class="legend-dot compromisso"></span>${nComp} compromisso(s)</span>` : ''}
@@ -6319,31 +6549,46 @@
                                         <div class="shift-block shift-${g.sh.key}">
                                             <div class="shift-label">${g.sh.label}</div>
                                             ${g.itens.map(e => {
-                                                const nome = e.kind === 'cliente' ? e.client.name : e.commitment.title;
-                                                const refId = e.kind === 'cliente' ? e.client.id : e.commitment.id;
-                                                const icones = e.kind === 'cliente'
-                                                    ? (e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')
-                                                    : '📌';
+                                                const ehGrupo = e.kind === 'grupo';
+                                                const nome = nomesDoItem(e);
+                                                const refId = ehGrupo ? e.grupo : (e.kind === 'cliente' ? e.client.id : e.commitment.id);
+                                                const icones = ehGrupo
+                                                    ? `<span class="badge-grupo">${rotuloGrupo(e.clients.length)}</span>`
+                                                    : (e.kind === 'cliente'
+                                                        ? (e.client.modalities || []).map(m => MODALITIES[m]?.icon || '').join('')
+                                                        : '📌');
+                                                const classeTipo = ehGrupo ? ' grupo t-' + clientType(e.clients[0])
+                                                    : (e.kind === 'cliente' ? ' t-' + clientType(e.client) : '');
                                                 return `
-                                                <div class="planner-slot ${e.kind}${e.kind === 'cliente' ? ' t-' + clientType(e.client) : ''}${e.fixo ? '' : ' extra'}">
+                                                <div class="planner-slot ${ehGrupo ? 'cliente' : e.kind}${classeTipo}${e.fixo ? '' : ' extra'}">
                                                     <div class="planner-slot-top">
                                                         <span class="planner-slot-time">${e.time}</span>
                                                         <span class="planner-slot-mods">${icones}${e.fixo ? '' : (e.dataFixa ? ` <span class="badge-extra data">${rotuloDataCurto(e.dataFixa)}</span>` : ' <span class="badge-extra">só esta semana</span>')}</span>
                                                         <span class="planner-slot-actions">
-                                                            ${e.fixo ? `
+                                                            ${e.fixo ? (ehGrupo ? `
+                                                                <button title="Cancelar a aula só nesta semana"
+                                                                        onclick="cancelarGrupoSemana('${e.grupo}', '${day}', '${e.time}')">⊘</button>
+                                                                <button title="Separar em atendimentos individuais"
+                                                                        onclick="desagruparHorario('${e.grupo}', '${day}', '${e.time}')">⇹</button>
+                                                                <button title="Remover a aula da agenda fixa"
+                                                                        onclick="removerGrupoInteiro('${e.grupo}', '${day}', '${e.time}')">✕</button>
+                                                            ` : `
                                                                 <button title="Cancelar só nesta semana"
                                                                         onclick="cancelThisWeek('${e.kind}', '${refId}', '${day}', '${e.time}')">⊘</button>
                                                                 <button title="Editar a agenda fixa"
                                                                         onclick="${e.kind === 'cliente' ? `openClientDetails('${refId}')` : `openCommitmentEdit('${refId}')`}">✎</button>
                                                                 <button title="Remover da agenda fixa"
                                                                         onclick="${e.kind === 'cliente' ? `removeAppointment('${refId}', '${day}', '${e.time}')` : `removeCommitment('${refId}')`}">✕</button>
-                                                            ` : `
+                                                            `) : `
                                                                 <button title="Remover este extra"
-                                                                        onclick="removeExtra('${e.exId}')">✕</button>
+                                                                        onclick="${ehGrupo ? `removerExtraGrupo('${e.exIds.join(',')}')` : `removeExtra('${e.exId}')`}">✕</button>
                                                             `}
                                                         </span>
                                                     </div>
                                                     <div class="planner-slot-name">${nome}</div>
+                                                    ${ehGrupo && e.fixo ? `<div class="grupo-membros">${e.clients.map(c =>
+                                                        `<button class="grupo-sair" title="Tirar ${c.name} desta aula"
+                                                                 onclick="sairDoGrupo('${c.id}', '${day}', '${e.time}')">${c.name} ✕</button>`).join('')}</div>` : ''}
                                                 </div>`;
                                             }).join('')}
                                         </div>`).join('')}
@@ -6547,78 +6792,104 @@
             renderDayPicker('plannerAddDays', day ? [day] : []);
             const hint = document.getElementById('plannerAddHint');
             hint.textContent = ''; hint.className = 'save-hint';
-            const sel = document.getElementById('plannerAddClient');
-            sel.innerHTML = '<option value="">Selecione o cliente…</option>' +
-                data.clients.slice().sort((a, b) => a.name.localeCompare(b.name))
-                    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            renderClientPicker('plannerAddClients', []);
+            atualizarResumoDupla();
             document.getElementById('plannerAddModal').classList.add('active');
         }
 
         function savePlannerAdd() {
-            const clientId = document.getElementById('plannerAddClient').value;
+            const ids = readClientPicker('plannerAddClients');
             const dias = readDayPicker('plannerAddDays');
             const time = document.getElementById('plannerAddTime').value;
             const hint = document.getElementById('plannerAddHint');
+            const escopo = (document.getElementById('plannerAddScope') || {}).value || 'fixo';
 
-            if ((document.getElementById('plannerAddScope') || {}).value === 'data') {
+            // Dois ou mais clientes no mesmo horário = uma aula só
+            const emGrupo = ids.length > 1;
+            const gid = emGrupo ? novoGrupoId() : null;
+            const nomes = ids.map(id => (data.clients || []).find(c => c.id === id))
+                             .filter(Boolean).map(c => c.name);
+
+            if (escopo === 'data') {
                 const iso = document.getElementById('plannerAddDate').value;
-                const c0 = data.clients.find(x => x.id === clientId);
-                if (!clientId || !time || !iso) {
+                if (!ids.length || !time || !iso) {
                     hint.textContent = 'Escolha o cliente, o horário e a data.';
                     hint.className = 'save-hint error';
                     return;
                 }
-                addDated({ kind: 'cliente', refId: clientId, date: iso, time });
+                ids.forEach(id => addDated({ kind: 'cliente', refId: id, date: iso, time, grupo: gid }));
                 closeModal('plannerAddModal');
                 renderPlanner();
                 renderDashboard();
-                confirmarDataFora(iso, c0 ? c0.name : 'Atendimento');
+                confirmarDataFora(iso, emGrupo ? `${rotuloGrupo(ids.length)} ${nomes.join(' + ')}` : (nomes[0] || 'Atendimento'));
                 return;
             }
 
-            if (!clientId || !dias.length || !time) {
-                hint.textContent = 'Escolha o cliente, o horário e ao menos um dia.';
+            if (!ids.length || !dias.length || !time) {
+                hint.textContent = 'Escolha ao menos um cliente, o horário e ao menos um dia.';
                 hint.className = 'save-hint error';
                 return;
             }
-            const c = data.clients.find(x => x.id === clientId);
-            if (!c) return;
 
-            const escopo = (document.getElementById('plannerAddScope') || {}).value || 'fixo';
             if (escopo === 'semana') {
-                dias.forEach(day => addException({ type: 'extra', kind: 'cliente', refId: clientId, day, time }));
+                ids.forEach(id => dias.forEach(day =>
+                    addException({ type: 'extra', kind: 'cliente', refId: id, day, time, grupo: gid })));
                 closeModal('plannerAddModal');
                 renderPlanner();
                 renderDashboard();
                 return;
             }
 
-            c.schedule = c.schedule || [];
             let novos = 0, repetidos = 0;
-            dias.forEach(day => {
-                if (c.schedule.some(x => x.day === day && x.time === time)) { repetidos++; return; }
-                c.schedule.push({ day, time });
-                novos++;
+            ids.forEach(id => {
+                const c = (data.clients || []).find(x => x.id === id);
+                if (!c) return;
+                c.schedule = c.schedule || [];
+                dias.forEach(day => {
+                    const jaTem = c.schedule.find(x => x.day === day && x.time === time);
+                    if (jaTem) {
+                        // já existia: se agora é dupla, aproveita e vincula ao grupo
+                        if (gid) { jaTem.grupo = gid; novos++; } else { repetidos++; }
+                        return;
+                    }
+                    c.schedule.push(gid ? { day, time, grupo: gid } : { day, time });
+                    novos++;
+                });
+                c.schedule = sortSchedule(c.schedule);
+                if (c.schedule.length) { c.day = c.schedule[0].day; c.time = c.schedule[0].time; }
             });
 
             if (novos === 0) {
-                hint.textContent = 'Esse cliente já tem esse horário nesses dias.';
+                hint.textContent = ids.length > 1
+                    ? 'Esses clientes já têm esse horário nesses dias.'
+                    : 'Esse cliente já tem esse horário nesses dias.';
                 hint.className = 'save-hint error';
                 return;
             }
 
-            c.schedule = sortSchedule(c.schedule);
-            c.day = c.schedule[0].day;
-            c.time = c.schedule[0].time;
             saveData();
             closeModal('plannerAddModal');
             renderPlanner();
             renderDashboard();
             renderClientsTab();
 
-            if (repetidos) {
+            if (emGrupo) {
+                updateSyncStatus(`✓ ${rotuloGrupo(ids.length)}: ${nomes.join(' + ')}`);
+            } else if (repetidos) {
                 alert(`${novos} horário(s) adicionado(s). ${repetidos} já existia(m) e foram ignorados.`);
             }
+        }
+
+        // Remove um encaixe em grupo (várias exceções de uma vez)
+        function removerExtraGrupo(idsStr) {
+            const ids = String(idsStr).split(',').filter(Boolean);
+            if (!ids.length) return;
+            if (!confirm('Remover esta aula desta semana?')) return;
+            ids.forEach(id => {
+                if (id.startsWith('dt_')) removeDated(id); else removeException(id);
+            });
+            renderPlanner();
+            renderDashboard();
         }
 
         // ============================================
@@ -7091,7 +7362,8 @@
         function plannerInsights() {
             const out = [];
             const semana = DAY_ORDER.map(day => ({ day, evs: agendaOfDay(day) }));
-            const totalAtend = semana.reduce((n, d) => n + d.evs.filter(e => e.kind === 'cliente').length, 0);
+            const totalAtend = semana.reduce((n, d) => n + d.evs.reduce((k, e) =>
+                k + (e.kind === 'grupo' ? e.clients.length : (e.kind === 'cliente' ? 1 : 0)), 0), 0);
 
             if (totalAtend === 0) {
                 return [{ sev: 'info', titulo: 'Agenda vazia',
@@ -7103,11 +7375,18 @@
                 const porHora = {};
                 evs.forEach(e => { (porHora[e.time] = porHora[e.time] || []).push(e); });
                 Object.entries(porHora).forEach(([hora, itens]) => {
+                    // Aula em grupo já vem agrupada num item só — não é sobreposição
                     if (itens.length < 2) return;
-                    const nomes = itens.map(e => e.kind === 'cliente' ? e.client.name : e.commitment.title);
+                    const nomes = itens.map(e => nomesDoItem(e));
+                    // Dá para virar dupla? Só se forem todos clientes com horário fixo
+                    const soClientes = itens.every(e => e.kind === 'cliente' && e.fixo);
                     out.push({ sev: 'critico', titulo: `${DAYS[day]} às ${hora} — ${itens.length} compromissos sobrepostos`,
-                        texto: `${nomes.join(' · ')}. Remarque um deles ou confirme se é atendimento em dupla.`,
-                        acao: { label: 'Abrir ' + DAYS[day], fn: `focusPlannerDay('${day}')` } });
+                        texto: `${nomes.join(' · ')}. ${soClientes
+                            ? 'Se eles treinam juntos, marque como aula em dupla e os dois passam a aparecer como um atendimento só.'
+                            : 'Remarque um deles.'}`,
+                        acao: soClientes
+                            ? { label: 'É aula em dupla', fn: `marcarComoDupla('${day}', '${hora}')` }
+                            : { label: 'Abrir ' + DAYS[day], fn: `focusPlannerDay('${day}')` } });
                 });
             });
 
@@ -7204,7 +7483,9 @@
             }
 
             // ---- 9. Balanço final ----
-            const horasSemana = (totalAtend * SESSION_MIN) / 60;
+            // Uma dupla ocupa um horário só: as horas contam slots, não pessoas
+            const slotsAtend = semana.reduce((n, d) => n + d.evs.filter(e => e.kind === 'cliente' || e.kind === 'grupo').length, 0);
+            const horasSemana = (slotsAtend * SESSION_MIN) / 60;
             out.push({ sev: 'info', titulo: `${totalAtend} atendimentos · ~${horasSemana.toFixed(1).replace('.', ',')}h de trabalho direto`,
                 texto: `Média de ${(totalAtend / 7).toFixed(1).replace('.', ',')} por dia. ${
                     livres.length ? `Dias livres: ${livres.join(', ')}.` : 'Nenhum dia totalmente livre nesta semana.'
@@ -7325,7 +7606,7 @@
                 const ini = toMin(e.time);
                 return {
                     ini, fim: ini + SESSION_MIN,
-                    nome: e.kind === 'cliente' ? e.client.name : e.commitment.title,
+                    nome: nomesDoItem(e),
                     kind: e.kind
                 };
             }).sort((a, b) => a.ini - b.ini);
@@ -7408,7 +7689,7 @@
 
                     // o próprio cliente já treina nesse dia
                     if (q.cliente) {
-                        const dele = ocup.filter(o => o.nome === q.cliente.name);
+                        const dele = ocup.filter(o => o.nome === q.cliente.name || o.nome.includes(q.cliente.name + ' +') || o.nome.includes('+ ' + q.cliente.name));
                         if (dele.length) ressalvas.push(`${q.cliente.name} já treina neste dia às ${dele.map(o => fromMin(o.ini)).join(', ')}`);
                     }
 
