@@ -660,6 +660,24 @@
 
         .planner-slot.extra { border-left-style: dashed; }
 
+        .tx-resumo {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+        .tx-aviso:empty { display: none; }
+        .tx-aviso {
+            color: #eba640; font-size: 0.79rem; line-height: 1.5;
+            margin-top: 4px;
+        }
+        .tx-editar {
+            font-size: 0.68rem; color: var(--text-muted);
+            letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px;
+        }
+        .list-item:hover .tx-editar { color: var(--primary); }
+
         /* ============ AULA EM DUPLA / TURMA ============ */
         .client-picker {
             display: flex; flex-direction: column; gap: 6px;
@@ -2417,6 +2435,11 @@
                                     <option value="Outro">Outro</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Data do recebimento</label>
+                                <input type="date" id="finDate" onchange="atualizarDicaData('finDate','finDateHint')">
+                                <div class="campo-dica" id="finDateHint"></div>
+                            </div>
                             <button onclick="addTransaction()" style="width: 100%;">Registrar</button>
                         </div>
 
@@ -2753,6 +2776,33 @@
                 <button class="btn-secondary danger" id="expenseDelete" onclick="deleteExpense()">Excluir</button>
                 <button class="btn-secondary" onclick="closeModal('expenseModal')">Cancelar</button>
                 <button onclick="saveExpense()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR LANÇAMENTO -->
+    <div id="txModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <div class="modal-title" id="txModalTitle">Editar lançamento</div>
+                <button class="modal-close" onclick="closeModal('txModal')">✕</button>
+            </div>
+            <div class="tx-resumo" id="txResumo"></div>
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="txDate" onchange="atualizarDicaData('txDate','txDateHint')">
+                <div class="campo-dica" id="txDateHint"></div>
+            </div>
+            <div class="form-group">
+                <label>Valor (R$)</label>
+                <input type="number" id="txAmount" step="0.01" min="0">
+            </div>
+            <div class="tx-aviso" id="txAviso"></div>
+            <div class="modal-footer">
+                <span id="txHint" class="save-hint"></span>
+                <button class="btn-secondary danger" onclick="deleteTx()">Excluir</button>
+                <button class="btn-secondary" onclick="closeModal('txModal')">Cancelar</button>
+                <button onclick="saveTx()">Salvar</button>
             </div>
         </div>
     </div>
@@ -5713,6 +5763,11 @@
         // ---- Render ----
         function renderFinanceiro() {
             ensureFinanceData();
+            const campoData = document.getElementById('finDate');
+            if (campoData && !campoData.value) {
+                campoData.value = getTodayDate();
+                atualizarDicaData('finDate', 'finDateHint');
+            }
             updateFinanceiroKPIs();
             updateFinanceiroSelects();
             renderPlans();
@@ -5890,16 +5945,92 @@
             const clientId = document.getElementById('finClient').value;
             const amount = parseFloat(document.getElementById('finAmount').value);
             const type = document.getElementById('finType').value;
+            const date = document.getElementById('finDate').value || getTodayDate();
 
             if (!clientId || !amount) { alert('Preencha cliente e valor'); return; }
 
             data.transactions.push({
                 id: 't_' + Date.now(), kind: 'receita', clientId, amount, type,
-                date: getTodayDate(), createdAt: new Date().toISOString()
+                date, createdAt: new Date().toISOString()
             });
             saveData();
             document.getElementById('finAmount').value = '';
             document.getElementById('finClient').value = '';
+            document.getElementById('finDate').value = getTodayDate();
+            atualizarDicaData('finDate', 'finDateHint');
+            renderFinanceiro();
+        }
+
+        // ---- Editar um lançamento já registrado ----
+        let editingTxId = null;
+
+        function openTxModal(id) {
+            ensureFinanceData();
+            const t = (data.transactions || []).find(x => x.id === id);
+            if (!t) return;
+            editingTxId = id;
+
+            const desp = t.kind === 'despesa';
+            const c = (data.clients || []).find(x => x.id === t.clientId);
+            const titulo = desp ? (t.descricao || t.type || 'Despesa') : (c ? c.name : 'Receita');
+
+            document.getElementById('txModalTitle').textContent = desp ? 'Editar despesa lançada' : 'Editar receita';
+            document.getElementById('txResumo').innerHTML = `
+                <div class="fin-row-title">${titulo}</div>
+                <div class="fin-row-sub">${[t.type, t.periodo ? rotuloPeriodo(t.periodo) : null,
+                    t.deParcelas ? `parcela ${t.parcela}/${t.deParcelas}` : null].filter(Boolean).join(' · ')}</div>`;
+            document.getElementById('txDate').value = t.date;
+            document.getElementById('txAmount').value = t.amount;
+            atualizarDicaData('txDate', 'txDateHint');
+
+            const aviso = document.getElementById('txAviso');
+            aviso.textContent = (t.planId || t.expenseId) && t.periodo
+                ? 'Este lançamento veio de um plano ou despesa recorrente. Se você excluir, o ciclo volta para "Em aberto".'
+                : '';
+
+            const h = document.getElementById('txHint'); h.textContent = ''; h.className = 'save-hint';
+            document.getElementById('txModal').classList.add('active');
+        }
+
+        function saveTx() {
+            const t = (data.transactions || []).find(x => x.id === editingTxId);
+            if (!t) return;
+            const date = document.getElementById('txDate').value;
+            const amount = parseFloat(document.getElementById('txAmount').value);
+            const hint = document.getElementById('txHint');
+            if (!date || !amount || amount <= 0) {
+                hint.textContent = 'Informe a data e um valor maior que zero.';
+                hint.className = 'save-hint error';
+                return;
+            }
+            t.date = date;
+            t.amount = amount;
+            saveData();
+            closeModal('txModal');
+            renderFinanceiro();
+        }
+
+        function deleteTx() {
+            const t = (data.transactions || []).find(x => x.id === editingTxId);
+            if (!t) return;
+            const volta = (t.planId || t.expenseId) && t.periodo;
+            if (!confirm(volta
+                ? 'Excluir este lançamento?\n\nO ciclo volta para "Em aberto" e você poderá registrá-lo de novo.'
+                : 'Excluir este lançamento?')) return;
+
+            // devolve o ciclo para "Em aberto"
+            if (t.planId && t.periodo) {
+                const p = (data.plans || []).find(x => x.id === t.planId);
+                if (p) p.pagos = (p.pagos || []).filter(x => x !== t.periodo);
+            }
+            if (t.expenseId && t.periodo) {
+                const e = (data.expenses || []).find(x => x.id === t.expenseId);
+                if (e) e.pagos = (e.pagos || []).filter(x => x !== t.periodo);
+            }
+
+            data.transactions = data.transactions.filter(x => x.id !== editingTxId);
+            saveData();
+            closeModal('txModal');
             renderFinanceiro();
         }
 
@@ -5927,13 +6058,15 @@
                              new Date(String(t.date) + 'T00:00:00').toLocaleDateString('pt-BR')]
                             .filter(Boolean).join(' · ');
                 return `
-                    <div class="list-item">
+                    <div class="list-item" style="cursor:pointer;" title="Tocar para corrigir data ou valor"
+                         onclick="openTxModal('${t.id}')">
                         <div class="list-item-content">
                             <div class="list-item-title">${titulo}</div>
                             <div class="list-item-subtitle">${sub}</div>
                         </div>
                         <div style="text-align: right;">
                             <div class="fin-row-val ${desp ? 'neg' : ''}">${desp ? '−' : '+'} ${brl(t.amount)}</div>
+                            <div class="tx-editar">editar</div>
                         </div>
                     </div>`;
             }).join('');
