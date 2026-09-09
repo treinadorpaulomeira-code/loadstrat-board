@@ -1857,6 +1857,20 @@
         .run-result-grid strong { font-size: 1.28rem; color: var(--primary); line-height: 1.2; }
         .run-result-grid small { font-size: 0.74rem; color: var(--text-secondary); }
 
+        .vol-linha { display: flex; align-items: stretch; gap: 0; }
+        .vol-linha input {
+            flex: 1; min-width: 0;
+            border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;
+        }
+        .vol-unidade {
+            display: flex; align-items: center; padding: 0 14px;
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+            border-left: none; border-radius: 0 8px 8px 0;
+            color: var(--primary); font-size: 0.86rem; font-weight: 600;
+            white-space: nowrap;
+        }
+        .campo-dica.erro { color: #eba640; }
+
         .run-summary {
             background: rgba(255,255,255,0.04);
             border: 1px solid var(--border);
@@ -2932,6 +2946,25 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label>Prescrever por</label>
+                        <select id="runUnit" onchange="onRunUnitChange(); updateRunPreview()">
+                            <option value="min">Tempo (minutos)</option>
+                            <option value="km">Distância (km)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>O volume que vou informar é</label>
+                        <select id="runBaseRef" onchange="onRunBaseRefChange(); updateRunPreview()">
+                            <option value="sessao">Da sessão contínua</option>
+                            <option value="semana">O total da semana</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="campo-dica" id="runVolHint" style="margin:-8px 0 14px;"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label>Semanas</label>
                         <select id="runWeeks" onchange="updateRunPreview()">
                             <option value="4">4 semanas</option>
@@ -2942,7 +2975,7 @@
                     </div>
                     <div class="form-group">
                         <label>Sessões por semana</label>
-                        <select id="runFreq" onchange="updateRunPreview()">
+                        <select id="runFreq" onchange="atualizarDicaVolume(); updateRunPreview()">
                             <option value="2">2x por semana</option>
                             <option value="3" selected>3x por semana</option>
                             <option value="4">4x por semana</option>
@@ -2953,8 +2986,12 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Volume inicial da sessão contínua</label>
-                        <input type="number" id="runBaseMin" min="10" max="120" value="20" oninput="updateRunPreview()">
+                        <label>Volume inicial</label>
+                        <div class="vol-linha">
+                            <input type="number" id="runBaseMin" min="10" max="150" value="20" step="1"
+                                   oninput="atualizarDicaVolume(); updateRunPreview()">
+                            <span class="vol-unidade" id="runBaseUnit">min</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Progressão semanal</label>
@@ -7094,6 +7131,110 @@
         }
 
         // --- Montagem do cronograma ---
+        // ---- Unidade do volume: tempo ou distância ----
+        // As zonas são de frequência cardíaca, então valem igual nos dois casos.
+        // Muda só COMO o volume é prescrito e como o aquecimento entra na conta.
+        const UNIDADES = {
+            min: {
+                label: 'Tempo (minutos)', abrev: 'min', aquec: 5, desaq: 5,
+                fmt: v => `${Math.round(v)} min`,
+                // blocos de tiro em minutos
+                tiro: w => Math.min(6, 2 + Math.floor((w - 1) / 3)),
+                recMin: 2,                      // nunca menos de 2 min de pausa entre tiros
+                fmtTiro: v => `${v} min`,
+                minBase: 10, maxBase: 150, passo: 1, exemploSessao: 20, exemploSemana: 90
+            },
+            km: {
+                label: 'Distância (km)', abrev: 'km', aquec: 1, desaq: 1,
+                fmt: v => `${(Math.round(v * 10) / 10).toString().replace('.', ',')} km`,
+                // blocos de tiro em metros
+                tiro: w => Math.min(1.0, 0.4 + 0.1 * Math.floor((w - 1) / 3)),
+                recMin: 0.2,                    // nunca menos de 200 m de pausa entre tiros
+                fmtTiro: v => v >= 1 ? `${(Math.round(v * 10) / 10).toString().replace('.', ',')} km` : `${Math.round(v * 1000)} m`,
+                minBase: 1, maxBase: 40, passo: 0.5, exemploSessao: 4, exemploSemana: 18
+            }
+        };
+
+        // Pesos de cada sessão da semana em relação à sessão contínua
+        function pesosDaSemana(freq) {
+            const p = [1, 0.85];                       // A (contínua) e B (intervalada)
+            for (let k = 3; k <= freq; k++) p.push(k === 3 ? 0.8 : 0.6);
+            return p;
+        }
+
+        // Converte um volume SEMANAL total (já incluindo aquec./desaq.) no volume da sessão contínua
+        function volContinuaAPartirDaSemana(semanal, freq, u) {
+            const overhead = freq * (u.aquec + u.desaq);
+            const trabalho = semanal - overhead;
+            if (trabalho <= 0) return null;
+            const soma = pesosDaSemana(freq).reduce((a, b) => a + b, 0);
+            return trabalho / soma;
+        }
+
+        // E o caminho inverso, para mostrar ao treinador quanto dá na semana
+        function semanaAPartirDaContinua(volA, freq, u) {
+            const overhead = freq * (u.aquec + u.desaq);
+            return pesosDaSemana(freq).reduce((a, b) => a + b * volA, 0) + overhead;
+        }
+
+        function unidadeAtual() {
+            const el = document.getElementById('runUnit');
+            return UNIDADES[(el && el.value) || 'min'] || UNIDADES.min;
+        }
+
+        function baseEhSemanal() {
+            const el = document.getElementById('runBaseRef');
+            return !!el && el.value === 'semana';
+        }
+
+        // Volume da sessão contínua na semana 1, seja qual for a forma de entrada
+        function volumeInicialContinua() {
+            const u = unidadeAtual();
+            const freq = Number((document.getElementById('runFreq') || {}).value) || 3;
+            const bruto = Number((document.getElementById('runBaseMin') || {}).value);
+            if (!bruto || bruto <= 0) return null;
+            return baseEhSemanal() ? volContinuaAPartirDaSemana(bruto, freq, u) : bruto;
+        }
+
+        function onRunUnitChange() {
+            const u = unidadeAtual();
+            const campo = document.getElementById('runBaseMin');
+            const semanal = baseEhSemanal();
+            campo.min = semanal ? u.minBase * 2 : u.minBase;
+            campo.max = u.maxBase * (semanal ? 4 : 1);
+            campo.step = u.passo;
+            campo.value = semanal ? u.exemploSemana : u.exemploSessao;
+            document.getElementById('runBaseUnit').textContent = u.abrev;
+            atualizarDicaVolume();
+        }
+
+        function onRunBaseRefChange() { onRunUnitChange(); }
+
+        function atualizarDicaVolume() {
+            const box = document.getElementById('runVolHint');
+            if (!box) return;
+            const u = unidadeAtual();
+            const freq = Number((document.getElementById('runFreq') || {}).value) || 3;
+            const bruto = Number((document.getElementById('runBaseMin') || {}).value);
+            if (!bruto) { box.textContent = ''; box.className = 'campo-dica'; return; }
+
+            if (baseEhSemanal()) {
+                const volA = volContinuaAPartirDaSemana(bruto, freq, u);
+                if (volA === null || volA < (u.minBase / 2)) {
+                    box.textContent = `${u.fmt(bruto)} por semana não cobre nem o aquecimento das ${freq} sessões. Aumente o volume ou reduza a frequência.`;
+                    box.className = 'campo-dica erro';
+                    return;
+                }
+                box.className = 'campo-dica';
+                box.textContent = `${u.fmt(bruto)} na semana ÷ ${freq} sessões → contínua de ${u.fmt(volA)} na semana 1 (aquec. e desaq. já inclusos).`;
+            } else {
+                const semana = semanaAPartirDaContinua(bruto, freq, u);
+                box.className = 'campo-dica';
+                box.textContent = `Contínua de ${u.fmt(bruto)} → ${u.fmt(semana)} na semana 1, somando as ${freq} sessões com aquec. e desaq.`;
+            }
+        }
+
+
         function buildRunPlan(manterEdicoes) {
             const el = id => document.getElementById(id);
             const hint = el('runHint');
@@ -7120,44 +7261,60 @@
 
             const semanas = Number(el('runWeeks').value);
             const freq = Number(el('runFreq').value);
-            const base = Number(el('runBaseMin').value) || 20;
             const prog = Number(el('runProgress').value) / 100;
             const deload = el('runDeload').checked;
 
+            const u = unidadeAtual();
+            const semanal = baseEhSemanal();
+            const base = volumeInicialContinua();
+            if (base === null || base <= 0) {
+                hint.textContent = semanal
+                    ? 'O volume semanal não cobre nem o aquecimento das sessões. Aumente o volume ou reduza a frequência.'
+                    : 'Informe o volume inicial.';
+                hint.className = 'save-hint error';
+                return;
+            }
+
+            // Arredondamento por unidade: minuto inteiro, ou 100 m
+            const arred = v => u.abrev === 'min' ? Math.round(v) : Math.round(v * 10) / 10;
+
             const linhas = [];
-            // volBase segue progredindo por baixo: a descarga reduz a semana, nao o programa
-            let volBase = base;
+            // volBase segue progredindo por baixo: a descarga reduz a semana, não o programa
+            let volBase = arred(base);
             let trabalhoAnterior = 0;
+
             for (let w = 1; w <= semanas; w++) {
                 const ehDeload = deload && w % 4 === 0;
-                if (w > 1) volBase = Math.round(volBase * (1 + prog));
-                const volA = ehDeload ? Math.round(volBase * 0.7) : volBase;
+                if (w > 1) volBase = arred(volBase * (1 + prog));
+                const volA = ehDeload ? arred(volBase * 0.7) : volBase;
 
                 // Sessão A — contínua em Z3
-                const sessaoA = `5 min aquec. Z1 + <b>${volA} min Z3</b> + 5 min desaq. Z1`;
-                const totalA = volA + 10;
+                const sessaoA = `${u.fmt(u.aquec)} aquec. Z1 + <b>${u.fmt(volA)} Z3</b> + ${u.fmt(u.desaq)} desaq. Z1`;
+                const totalA = arred(volA + u.aquec + u.desaq);
 
                 // Sessão B — intervalada; blocos crescem e a intensidade sobe na 2ª metade
                 const metadeFinal = w > semanas / 2;
                 const zonaTiro = metadeFinal ? 'Z4–Z5' : 'Z4';
-                const durTiro = Math.min(6, 2 + Math.floor((w - 1) / 3));
-                const durRec = Math.max(2, Math.round(durTiro / 2));
+                const durTiro = u.tiro(w);
+                const durRec = Math.max(u.recMin, arred(durTiro / 2));
                 const bloco = durTiro + durRec;
                 let reps = Math.max(3, Math.round((volA * 0.85) / bloco));
                 // garante que o volume de tiros realmente sobe semana a semana (exceto na descarga)
-                if (!ehDeload && w > 1 && reps * bloco <= trabalhoAnterior) {
+                if (!ehDeload && w > 1 && reps * bloco <= trabalhoAnterior + 1e-9) {
                     reps = Math.max(reps + 1, Math.floor(trabalhoAnterior / bloco) + 1);
                 }
-                const trabalho = reps * bloco;
+                const trabalho = arred(reps * bloco);
                 trabalhoAnterior = ehDeload ? trabalhoAnterior : trabalho;
-                const sessaoB = `5 min aquec. Z1 + <b>${reps}× (${durTiro} min ${zonaTiro} / ${durRec} min Z2)</b> = ${trabalho} min + 5 min desaq.`;
-                const totalB = trabalho + 10;
+                const sessaoB = `${u.fmt(u.aquec)} aquec. Z1 + <b>${reps}× (${u.fmtTiro(durTiro)} ${zonaTiro} / ${u.fmtTiro(durRec)} Z2)</b> = ${u.fmt(trabalho)} + ${u.fmt(u.desaq)} desaq.`;
+                const totalB = arred(trabalho + u.aquec + u.desaq);
 
-                // Sessões extras, se a frequência for maior que 2
+                // Sessões complementares, se a frequência for maior que 2
                 const extras = [];
+                let volExtras = 0;
                 for (let k = 3; k <= freq; k++) {
-                    const volExtra = Math.round(volA * (k === 3 ? 0.8 : 0.6));
-                    extras.push(`5 min Z1 + <b>${volExtra} min Z2</b> (regenerativo) + 5 min Z1 — Total: ${volExtra + 10} min`);
+                    const volExtra = arred(volA * (k === 3 ? 0.8 : 0.6));
+                    volExtras += volExtra + u.aquec + u.desaq;
+                    extras.push(`${u.fmt(u.aquec)} Z1 + <b>${u.fmt(volExtra)} Z2</b> (regenerativo) + ${u.fmt(u.desaq)} Z1 — Total: ${u.fmt(volExtra + u.aquec + u.desaq)}`);
                 }
 
                 linhas.push({
@@ -7166,7 +7323,7 @@
                     sessaoA, totalA,
                     sessaoB, totalB,
                     extras,
-                    volumeSemana: totalA + totalB + extras.reduce((acc, _, i) => acc + Math.round(volA * (i === 0 ? 0.8 : 0.6)) + 10, 0)
+                    volumeSemana: arred(totalA + totalB + volExtras)
                 });
             }
 
@@ -7178,7 +7335,9 @@
                 fcMax,
                 fcMaxOrigem: el('runHrSource').value === 'medida' && Number(el('runHrMax').value) ? 'medida' : 'Tanaka',
                 teste: el('runTest').value,
-                semanas, freq, base, prog: prog * 100, deload,
+                semanas, freq, base: arred(base), prog: prog * 100, deload,
+                unidade: u.abrev, unidadeLabel: u.label, baseSemanal: semanal,
+                volumeSemana1: linhas.length ? linhas[0].volumeSemana : 0,
                 zonas: zonasAnteriores || calcZonas(fcMax),
                 linhas
             };
@@ -7283,6 +7442,7 @@
             document.getElementById('runStep1').style.display = '';
             document.getElementById('runStep2').style.display = 'none';
             onRunTestChange();
+            onRunUnitChange();
             document.getElementById('runPlannerModal').classList.add('active');
         }
 
@@ -7300,6 +7460,7 @@
                     <div><span>VO₂máx</span><strong>${String(P.vo2).replace('.', ',')}</strong><small>${P.classificacao}</small></div>
                     <div><span>FC máxima</span><strong>${P.fcMax} bpm</strong><small>${P.fcMaxOrigem}</small></div>
                     <div><span>Programa</span><strong>${P.semanas} semanas</strong><small>${P.freq}x/semana · +${P.prog}%/sem</small></div>
+                    <div><span>Volume semana 1</span><strong>${P.unidade === 'km' ? String(P.volumeSemana1).replace('.', ',') + ' km' : P.volumeSemana1 + ' min'}</strong><small>por ${P.unidade === 'km' ? 'distância' : 'tempo'}</small></div>
                 </div>`;
 
             document.getElementById('runZonesTable').innerHTML = `
@@ -7333,6 +7494,8 @@
 
             const obs = [];
             if (P.freq < 3) obs.push('Frequência abaixo do mínimo do ACSM (3–5x/semana) para ganho ótimo de capacidade cardiorrespiratória — o volume por sessão foi ajustado para compensar.');
+            obs.push(`Volume prescrito em ${P.unidade === 'km' ? 'distância (km)' : 'tempo (minutos)'}. Semana 1: ${
+                P.unidade === 'km' ? String(P.volumeSemana1).replace('.', ',') + ' km' : P.volumeSemana1 + ' min'} no total, somando as ${P.freq} sessões.`);
             obs.push(`Progressão de ${P.prog}% por semana no volume, dentro da faixa de 5–10% recomendada na literatura.`);
             obs.push(`Zonas calibradas sobre FC máxima de ${P.fcMax} bpm (${P.fcMaxOrigem}).`);
             if (P.deload) obs.push('Semana de descarregamento a cada 4 semanas, com redução de 30% do volume.');
@@ -7360,12 +7523,13 @@
                 </div>
 
                 <div style="padding:16px 18px 0 18px;">
-                    <div style="font-size:9px; letter-spacing:2px; color:#8a7a3c; font-weight:700;">PROGRAMA AERÓBICO · POR TEMPO</div>
+                    <div style="font-size:9px; letter-spacing:2px; color:#8a7a3c; font-weight:700;">PROGRAMA AERÓBICO · ${P.unidade === 'km' ? 'POR DISTÂNCIA' : 'POR TEMPO'}</div>
                     <div style="font-size:21px; font-weight:700; margin:6px 0 2px;">${P.nome}</div>
                     <div style="font-size:10.5px; color:#555;">
                         ${P.semanas} semanas &nbsp;·&nbsp; ${P.freq}x por semana &nbsp;·&nbsp;
                         VO₂máx ${String(P.vo2).replace('.', ',')} ml/kg/min &nbsp;·&nbsp; <b>${P.classificacao}</b>
-                        &nbsp;·&nbsp; FC máx ${P.fcMax} bpm
+                        &nbsp;·&nbsp; FC máx ${P.fcMax} bpm &nbsp;·&nbsp;
+                        semana 1: ${P.unidade === 'km' ? String(P.volumeSemana1).replace('.', ',') + ' km' : P.volumeSemana1 + ' min'}
                     </div>
                     <div style="height:2px; background:#d4af37; width:64px; margin:12px 0 0;"></div>
                 </div>
