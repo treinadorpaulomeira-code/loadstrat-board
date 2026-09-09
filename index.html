@@ -1857,6 +1857,38 @@
         .run-result-grid strong { font-size: 1.28rem; color: var(--primary); line-height: 1.2; }
         .run-result-grid small { font-size: 0.74rem; color: var(--text-secondary); }
 
+        /* ============ CONTEXTO DO ATLETA ============ */
+        .ctx-leitura:empty { display: none; }
+        .ctx-leitura {
+            margin-top: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 13px;
+        }
+        .ctx-titulo {
+            font-size: 0.7rem; letter-spacing: 0.9px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 9px;
+        }
+        .ctx-item {
+            display: flex; align-items: flex-start; gap: 9px; flex-wrap: wrap;
+            padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ctx-item:last-of-type { border-bottom: none; }
+        .ctx-ico { flex: 0 0 auto; font-size: 0.86rem; line-height: 1.5; }
+        .ctx-txt { flex: 1; min-width: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }
+        .ctx-txt em { color: var(--text-muted); font-style: normal; font-size: 0.78rem; }
+        .ctx-item.alerta .ctx-txt { color: #eba640; }
+        .ctx-btn { flex: 0 0 auto; }
+        .ctx-vazio, .ctx-rodape {
+            color: var(--text-muted); font-size: 0.77rem; line-height: 1.5;
+        }
+        .ctx-rodape { margin-top: 9px; }
+        .campo-aplicado {
+            box-shadow: 0 0 0 2px var(--primary);
+            transition: box-shadow 0.25s;
+        }
+
         .vol-linha { display: flex; align-items: stretch; gap: 0; }
         .vol-linha input {
             flex: 1; min-width: 0;
@@ -2902,6 +2934,14 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Informações adicionais
+                        <span style="color: var(--text-muted); font-weight: 400;">— escreva livremente</span></label>
+                    <textarea id="runContexto" rows="4" oninput="onRunContextoInput()"
+                              placeholder="Ex: Corre 25 km por semana, 3x por semana. Só pode terça e quinta de manhã e sábado cedo. Recorde de 10 km em 52 min. Sente dor no joelho direito em descidas."></textarea>
+                    <div class="ctx-leitura" id="runContextoLeitura"></div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Idade</label>
@@ -3032,6 +3072,11 @@
                 <div class="chart-table"><table class="data-table" id="runPlanTable"></table></div>
 
                 <div class="form-group" style="margin-top: 20px;">
+                    <label>Informações adicionais <span style="color: var(--text-muted); font-weight: 400;">— sai no PDF</span></label>
+                    <textarea id="runContextoRev" rows="3" placeholder="Sem informações adicionais."></textarea>
+                </div>
+
+                <div class="form-group">
                     <label>Observações do cronograma</label>
                     <textarea id="runNotes" rows="4"></textarea>
                 </div>
@@ -4619,10 +4664,19 @@
                             onclick="addScheduleRow()">➕ Adicionar horário</button>
                 </div>
 
+                <div class="form-group">
+                    <label>Informações adicionais
+                        <span style="color: var(--text-muted); font-weight: 400;">— escreva livremente</span></label>
+                    <textarea id="editClientContexto" rows="4" oninput="markClientDirty(); onClientContextoInput()"
+                              placeholder="Ex: Corre 25 km por semana, 3x. Só pode terça e quinta de manhã. Recorde de 10 km em 52 min. Dor no joelho direito em descidas.">${(client.contexto || '').replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))}</textarea>
+                    <div class="ctx-leitura" id="editClientContextoLeitura"></div>
+                </div>
+
                 <div id="clientSessionsSummary" class="client-sessions-summary"></div>
             `;
 
             renderTypePicker('editTypePicker', 'editClientTipo', clientType(client), 'markClientDirty()');
+            onClientContextoInput();
             renderScheduleEditor(client.schedule || []);
             renderClientSessionsSummary(clientId);
             clientDirty = false;
@@ -4739,6 +4793,12 @@
             client.tipo = tipoSel ? tipoSel.value : clientType(client);
             client.name = name;
             client.modalities = modalities;
+            const cx = document.getElementById('editClientContexto');
+            if (cx) {
+                const antes = client.contexto || '';
+                client.contexto = (cx.value || '').trim();
+                if (client.contexto !== antes) client.contextoEm = new Date().toISOString();
+            }
             client.schedule = sortSchedule(schedule);
             client.day = client.schedule[0]?.day || '';      // compatibilidade
             client.time = client.schedule[0]?.time || '';
@@ -7130,6 +7190,178 @@
             });
         }
 
+        // ============================================
+        // CONTEXTO DO ATLETA
+        // Uma caixa de texto livre, escrita como você falaria comigo.
+        // O texto inteiro fica guardado no perfil e vai para o PDF.
+        // Além disso, os padrões que dá para reconhecer com segurança
+        // (volume, frequência, dias, horários, recordes, queixas) viram
+        // sugestões aplicáveis — nada é alterado sem você clicar.
+        // ============================================
+
+        function lerContexto(txt) {
+            const t = semAcento(txt || '');
+            const achados = [];
+
+            const num = x => Number(String(x).replace(',', '.'));
+
+            // ---- volume semanal ----
+            let m = t.match(/(\d+[.,]?\d*)\s*(km|quilometros?|kms)\b[^.;\n]{0,24}?(semana|semanal)/);
+            if (m) achados.push({ tipo: 'volume', un: 'km', ref: 'semana', valor: num(m[1]),
+                rotulo: `Volume atual: ${String(num(m[1])).replace('.', ',')} km por semana`,
+                acao: { label: 'Usar como volume inicial', fn: `aplicarVolume('km','semana',${num(m[1])})` } });
+
+            if (!m) {
+                m = t.match(/(\d+)\s*(min|minutos)\b[^.;\n]{0,24}?(semana|semanal)/);
+                if (m) achados.push({ tipo: 'volume', un: 'min', ref: 'semana', valor: num(m[1]),
+                    rotulo: `Volume atual: ${m[1]} min por semana`,
+                    acao: { label: 'Usar como volume inicial', fn: `aplicarVolume('min','semana',${num(m[1])})` } });
+            }
+
+            // volume por sessão / por treino
+            let ms = t.match(/(\d+[.,]?\d*)\s*(km|quilometros?)\b[^.;\n]{0,24}?(por (treino|sessao|vez)|cada (treino|sessao))/);
+            if (ms) achados.push({ tipo: 'volume', un: 'km', ref: 'sessao', valor: num(ms[1]),
+                rotulo: `Corre ${String(num(ms[1])).replace('.', ',')} km por treino`,
+                acao: { label: 'Usar como volume da contínua', fn: `aplicarVolume('km','sessao',${num(ms[1])})` } });
+
+            // ---- frequência ----
+            // "3x por semana" é o caso explícito; "3x" solto também é comum na anotação
+            let mf = t.match(/(\d+)\s*(x|vezes)\s*(por|na|\/)?\s*semana/);
+            let suposta = false;
+            if (!mf) { mf = t.match(/\b([2-7])\s*(x|vezes)\b/); suposta = !!mf; }
+            if (mf && Number(mf[1]) >= 1 && Number(mf[1]) <= 7) {
+                const f = Number(mf[1]);
+                achados.push({ tipo: 'freq', valor: f,
+                    rotulo: `Frequência: ${f}x por semana${suposta ? '' : ''}`,
+                    acao: f >= 2 && f <= 5 ? { label: `Usar ${f}x/semana`, fn: `aplicarFrequencia(${f})` } : null,
+                    nota: f > 5 ? 'acima do que o cronograma monta (máx. 5x)'
+                        : (f < 2 ? 'abaixo do mínimo do cronograma (mín. 2x)'
+                        : (suposta ? 'entendi como vezes por semana' : null)) });
+            }
+
+            // ---- dias disponíveis ----
+            const dias = [];
+            Object.entries(DIA_ALIASES).forEach(([k, nomes]) => {
+                if (nomes.some(n => new RegExp('\\b' + semAcento(n) + '\\b').test(t))) dias.push(k);
+            });
+            if (/fim de semana|final de semana/.test(t)) { dias.push('sabado', 'domingo'); }
+            if (/dias? uteis/.test(t)) dias.push('segunda','terca','quarta','quinta','sexta');
+            const diasUnicos = [...new Set(dias)];
+            if (diasUnicos.length) achados.push({ tipo: 'dias', valor: diasUnicos,
+                rotulo: `Dias citados: ${diasUnicos.map(d => DAYS[d]).join(', ')}` });
+
+            // ---- turno e horários ----
+            const turnos = [];
+            if (/\bmanha\b|de manha|pela manha|\bcedo\b/.test(t)) turnos.push('manhã');
+            if (/\btarde\b|a tarde/.test(t)) turnos.push('tarde');
+            if (/\bnoite\b|a noite|fim do dia/.test(t)) turnos.push('noite');
+            const horas = [...new Set((txt.match(/\b([01]?\d|2[0-3])[:h][0-5]\d\b/g) || []))];
+            if (turnos.length || horas.length) achados.push({ tipo: 'horario',
+                rotulo: `Disponibilidade: ${[turnos.join(' e '), horas.join(', ')].filter(Boolean).join(' · ')}` });
+
+            // ---- recordes / melhores marcas ----
+            const rx = /(recorde|melhor tempo|melhor marca|\bpr\b|\bpb\b)[^.;\n]{0,80}/g;
+            let mr; const recordes = [];
+            while ((mr = rx.exec(t)) !== null) recordes.push(txt.slice(mr.index, mr.index + mr[0].length).trim());
+            recordes.slice(0, 3).forEach(r => achados.push({ tipo: 'recorde', rotulo: `Marca: ${r}` }));
+
+            // ---- prova / objetivo ----
+            const mp = txt.match(/[^.;\n]{0,60}(prova|maratona|meia|corrida de|\b\d+\s?k\b|\b\d+\s?km\b)[^.;\n]{0,60}/i);
+            if (mp && /prova|maratona|meia/i.test(mp[0])) achados.push({ tipo: 'objetivo', rotulo: `Objetivo: ${mp[0].trim()}` });
+
+            // ---- queixas e restrições: sempre como alerta, nunca como diagnóstico ----
+            const termos = ['dor', 'lesao', 'lesionad', 'cirurgia', 'tendinite', 'fascite', 'condropat',
+                            'hernia', 'entorse', 'estiramento', 'restricao', 'limitacao', 'desconforto'];
+            const frases = txt.split(/[.;\n]/).map(f => f.trim()).filter(f =>
+                termos.some(x => semAcento(f).includes(x)));
+            frases.slice(0, 3).forEach(f => achados.push({ tipo: 'alerta', rotulo: f }));
+
+            return achados;
+        }
+
+        const CONTEXTO_ICONES = {
+            volume: '📏', freq: '🔁', dias: '📅', horario: '🕐',
+            recorde: '🏅', objetivo: '🎯', alerta: '⚠️'
+        };
+
+        function renderLeituraContexto(txt, alvoId) {
+            const box = document.getElementById(alvoId);
+            if (!box) return;
+            const limpo = (txt || '').trim();
+            if (!limpo) { box.innerHTML = ''; return; }
+
+            const achados = lerContexto(limpo);
+            if (!achados.length) {
+                box.innerHTML = `<div class="ctx-vazio">Nada reconhecido automaticamente — o texto fica guardado no perfil do atleta e entra no PDF do mesmo jeito.</div>`;
+                return;
+            }
+
+            box.innerHTML = `
+                <div class="ctx-titulo">O que o sistema reconheceu</div>
+                ${achados.map(a => `
+                    <div class="ctx-item ${a.tipo === 'alerta' ? 'alerta' : ''}">
+                        <span class="ctx-ico">${CONTEXTO_ICONES[a.tipo] || '•'}</span>
+                        <span class="ctx-txt">${a.rotulo}${a.nota ? ` <em>(${a.nota})</em>` : ''}</span>
+                        ${a.acao && document.getElementById('runBaseMin')
+                            && document.getElementById('runPlannerModal').classList.contains('active')
+                            ? `<button class="chart-toggle ctx-btn" onclick="${a.acao.fn}">${a.acao.label}</button>` : ''}
+                    </div>`).join('')}
+                <div class="ctx-rodape">O resto do texto é guardado como está.</div>`;
+        }
+
+        // ---- Ações sugeridas ----
+        function aplicarVolume(un, ref, valor) {
+            const u = document.getElementById('runUnit');
+            const r = document.getElementById('runBaseRef');
+            const campo = document.getElementById('runBaseMin');
+            if (!u || !r || !campo) return;
+            u.value = un; onRunUnitChange();
+            r.value = ref; onRunBaseRefChange();
+            campo.value = valor;
+            atualizarDicaVolume();
+            updateRunPreview();
+            piscar(campo);
+        }
+
+        function aplicarFrequencia(f) {
+            const el = document.getElementById('runFreq');
+            if (!el) return;
+            el.value = String(f);
+            atualizarDicaVolume();
+            updateRunPreview();
+            piscar(el);
+        }
+
+        function piscar(el) {
+            el.classList.add('campo-aplicado');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => el.classList.remove('campo-aplicado'), 1600);
+        }
+
+        // ---- Ligação com o cliente ----
+        function contextoDoCliente(clientId) {
+            const c = (data.clients || []).find(x => x.id === clientId);
+            return (c && c.contexto) || '';
+        }
+
+        function salvarContextoNoCliente(clientId, txt) {
+            const c = (data.clients || []).find(x => x.id === clientId);
+            if (!c) return false;
+            c.contexto = (txt || '').trim();
+            c.contextoEm = new Date().toISOString();
+            saveData();
+            return true;
+        }
+
+        function onClientContextoInput() {
+            const el = document.getElementById('editClientContexto');
+            if (el) renderLeituraContexto(el.value, 'editClientContextoLeitura');
+        }
+
+        function onRunContextoInput() {
+            renderLeituraContexto(document.getElementById('runContexto').value, 'runContextoLeitura');
+        }
+
         // --- Montagem do cronograma ---
         // ---- Unidade do volume: tempo ou distância ----
         // As zonas são de frequência cardíaca, então valem igual nos dois casos.
@@ -7336,11 +7568,16 @@
                 fcMaxOrigem: el('runHrSource').value === 'medida' && Number(el('runHrMax').value) ? 'medida' : 'Tanaka',
                 teste: el('runTest').value,
                 semanas, freq, base: arred(base), prog: prog * 100, deload,
+                contexto: (el('runContexto').value || '').trim(),
                 unidade: u.abrev, unidadeLabel: u.label, baseSemanal: semanal,
                 volumeSemana1: linhas.length ? linhas[0].volumeSemana : 0,
                 zonas: zonasAnteriores || calcZonas(fcMax),
                 linhas
             };
+
+            // o texto livre fica no perfil do atleta, não só neste cronograma
+            const idCli = el('runClient').value;
+            if (idCli) salvarContextoNoCliente(idCli, runPlan.contexto);
 
             renderRunReview();
             el('runStep1').style.display = 'none';
@@ -7428,6 +7665,11 @@
             const id = document.getElementById('runClient').value;
             const c = (data.clients || []).find(x => x.id === id);
             if (c) document.getElementById('runName').value = c.name;
+            const cx = document.getElementById('runContexto');
+            if (cx) {
+                cx.value = c ? (c.contexto || '') : '';
+                onRunContextoInput();
+            }
         }
 
         function openRunPlanner() {
@@ -7500,6 +7742,7 @@
             obs.push(`Zonas calibradas sobre FC máxima de ${P.fcMax} bpm (${P.fcMaxOrigem}).`);
             if (P.deload) obs.push('Semana de descarregamento a cada 4 semanas, com redução de 30% do volume.');
             document.getElementById('runNotes').value = obs.join('\n');
+            document.getElementById('runContextoRev').value = P.contexto || '';
         }
 
         function editZona(i, campo, valor) { runPlan.zonas[i][campo] = valor.trim(); }
@@ -7513,6 +7756,7 @@
             const temExtras = P.linhas.some(l => l.extras && l.extras.length);
             const obs = (document.getElementById('runNotes').value || '')
                 .split('\n').map(x => x.trim()).filter(Boolean);
+            const ctx = ((document.getElementById('runContextoRev') || {}).value || P.contexto || '').trim();
 
             return `
             <div style="font-family: Helvetica, Arial, sans-serif; color:#1a1a1a; background:#ffffff; width:100%; padding:0 0 8mm 0;">
@@ -7579,6 +7823,13 @@
                         </tbody>
                     </table>
                 </div>
+
+                ${ctx ? `
+                <div style="margin:18px 18px 0 18px; border:1px solid #e3e0d6; padding:11px 13px;">
+                    <div style="font-size:9px; letter-spacing:1.6px; font-weight:700; margin-bottom:6px;">INFORMAÇÕES DO ATLETA</div>
+                    <div style="font-size:9.5px; color:#444; line-height:1.6; white-space:pre-wrap;">${
+                        ctx.replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))}</div>
+                </div>` : ''}
 
                 ${obs.length ? `
                 <div style="margin:18px 18px 0 18px; background:#f6f4ee; border-left:3px solid #d4af37; padding:11px 13px;">
