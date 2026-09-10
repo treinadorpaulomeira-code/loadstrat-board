@@ -210,10 +210,11 @@
         /* ============ GRID ============ */
         .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 24px;
             margin-bottom: 30px;
         }
+        .grid-2 > * { min-width: 0; }
 
         .grid-full {
             grid-column: 1 / -1;
@@ -659,6 +660,53 @@
         .week-exceptions strong { color: #a8bcd9; }
 
         .planner-slot.extra { border-left-style: dashed; }
+
+        /* ============ SERVIÇOS AVULSOS ============ */
+        .serv-grid {
+            display: grid; gap: 10px;
+            /* min(160px, 100%) deixa a coluna encolher em tela estreita;
+               sem isso o grid exige 3x160px e estoura o card inteiro */
+            grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+            margin-top: 6px;
+        }
+        .serv-card { min-width: 0; }
+        .serv-card {
+            display: grid; gap: 3px; text-align: left;
+            padding: 13px 14px; border-radius: 10px; cursor: pointer;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            text-transform: none; letter-spacing: 0; color: inherit;
+            transition: border-color .15s, background .15s;
+        }
+        .serv-card:hover { border-color: rgba(255,255,255,0.24); background: rgba(255,255,255,0.05); }
+        .serv-card.ativo { border-color: var(--primary); background: rgba(212,175,55,0.09); }
+        .serv-dot { width: 9px; height: 9px; border-radius: 50%; }
+        .serv-nome {
+            font-size: 0.72rem; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--text-muted); font-weight: 500;
+        }
+        .serv-mes {
+            font-size: 1.28rem; font-weight: 700; color: var(--text-primary);
+            font-variant-numeric: tabular-nums; line-height: 1.2;
+        }
+        .serv-sub { font-size: 0.73rem; color: var(--text-muted); line-height: 1.4; }
+        .serv-soma {
+            margin-top: 12px; font-size: 0.84rem; color: var(--text-secondary);
+        }
+        .serv-soma strong { color: #4dbd8a; }
+        .serv-tag {
+            display: inline-block; margin-left: 6px; padding: 1px 7px;
+            font-size: 0.63rem; font-weight: 700; letter-spacing: 0.4px;
+            text-transform: uppercase; border: 1px solid; border-radius: 4px;
+            vertical-align: middle;
+        }
+        .fin-filtro-total {
+            margin-top: 12px; padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted); font-size: 0.84rem;
+        }
+        .fin-filtro-total strong { font-size: 1rem; margin-left: 4px; }
+        .fin-filtro-total .pos { color: #4dbd8a; }
+        .fin-filtro-total .neg { color: #e34b57; }
 
         .tx-resumo {
             background: rgba(255,255,255,0.03);
@@ -2130,8 +2178,14 @@
 
             .tab-content { padding: 14px; }
 
+            /* minmax(0,1fr) e não 1fr: "1fr" tem mínimo implícito de min-content,
+               então um filho largo (tabela, valor sem quebra) estica a coluna
+               para além da tela e o cartão inteiro vaza. */
             .grid-2, .grid-3, .stats-grid, .modalities-grid, .form-row {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+            .grid-2 > *, .grid-3 > *, .stats-grid > *, .modalities-grid > *, .form-row > * {
+                min-width: 0;
             }
 
             .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2489,9 +2543,15 @@
                             <button onclick="addTransaction()" style="width: 100%;">Registrar</button>
                         </div>
 
-                        <div class="card">
-                            <div class="card-title">📋 Últimos lançamentos</div>
-                            <div id="transactionsList" class="mt-20"></div>
+                        <div class="card grid-full">
+                            <div class="card-title">🧾 Avaliações, consultorias e outros</div>
+                            <div id="servicosBox"></div>
+                        </div>
+
+                        <div class="card grid-full">
+                            <div class="card-title">📋 Lançamentos</div>
+                            <div class="type-tabs" id="finFiltros"></div>
+                            <div id="transactionsList"></div>
                             <div class="stat-box" style="margin-top:14px;">
                                 <div class="stat-label">Saldo acumulado</div>
                                 <div class="stat-value" id="finTotal">R$ 0,00</div>
@@ -5857,6 +5917,101 @@
             updateSyncStatus(`✓ ${e.descricao} · ${rotuloPeriodo(periodo)} lançada`);
         }
 
+        // ============================================
+        // SERVIÇOS AVULSOS: AVALIAÇÃO, CONSULTORIA E OUTRO
+        // Cada um é uma linha de receita própria, contada separado do
+        // que vem de mensalidade. Serve para saber quanto entra fora do plano.
+        // ============================================
+        const SERVICOS = ['Avaliação', 'Consultoria', 'Outro'];
+        const SERVICO_COR = { 'Avaliação': '#0da197', 'Consultoria': '#3d76f5', 'Outro': '#86528e' };
+
+        // Em que gaveta cada lançamento cai
+        function categoriaLancamento(t) {
+            if (t.kind === 'despesa') return 'despesa';
+            if (t.planId) return 'plano';
+            if (SERVICOS.includes(t.type)) return t.type;
+            return 'sessao';
+        }
+
+        const FIN_FILTROS = [
+            { key: 'todos',       label: 'Todos' },
+            { key: 'plano',       label: 'Mensalidades' },
+            { key: 'sessao',      label: 'Sessões e pacotes' },
+            { key: 'Avaliação',   label: 'Avaliação' },
+            { key: 'Consultoria', label: 'Consultoria' },
+            { key: 'Outro',       label: 'Outro' },
+            { key: 'despesa',     label: 'Despesas' }
+        ];
+
+        let finFiltro = 'todos';
+
+        function setFinFiltro(k) {
+            finFiltro = k;
+            renderServicos();          // o card do serviço escolhido fica destacado
+            renderFinFiltros();
+            renderTransactions();
+            const lista = document.getElementById('transactionsList');
+            if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function contaPorCategoria() {
+            const c = {};
+            FIN_FILTROS.forEach(f => c[f.key] = 0);
+            (data.transactions || []).forEach(t => {
+                c.todos++;
+                const k = categoriaLancamento(t);
+                if (c[k] !== undefined) c[k]++;
+            });
+            return c;
+        }
+
+        function renderFinFiltros() {
+            const el = document.getElementById('finFiltros');
+            if (!el) return;
+            const n = contaPorCategoria();
+            el.innerHTML = FIN_FILTROS
+                .filter(f => f.key === 'todos' || n[f.key] > 0 || SERVICOS.includes(f.key))
+                .map(f => `
+                    <button class="type-tab ${finFiltro === f.key ? 'active' : ''}" onclick="setFinFiltro('${f.key}')">
+                        ${f.label}<span class="type-tab-count">${n[f.key] || 0}</span>
+                    </button>`).join('');
+        }
+
+        // Totais dos três serviços — no mês e no acumulado
+        function totaisServicos() {
+            const mes = periodoAtual();
+            const out = {};
+            SERVICOS.forEach(s => out[s] = { mes: 0, total: 0, qtdMes: 0, qtdTotal: 0 });
+            (data.transactions || []).forEach(t => {
+                if (t.kind === 'despesa' || !SERVICOS.includes(t.type) || t.planId) return;
+                const v = Number(t.amount) || 0;
+                out[t.type].total += v;
+                out[t.type].qtdTotal++;
+                if (String(t.date).slice(0, 7) === mes) { out[t.type].mes += v; out[t.type].qtdMes++; }
+            });
+            return out;
+        }
+
+        function renderServicos() {
+            const el = document.getElementById('servicosBox');
+            if (!el) return;
+            const tot = totaisServicos();
+            const somaMes = SERVICOS.reduce((a, s) => a + tot[s].mes, 0);
+
+            el.innerHTML = `
+                <div class="serv-grid">
+                    ${SERVICOS.map(s => `
+                        <button class="serv-card ${finFiltro === s ? 'ativo' : ''}" onclick="setFinFiltro('${s}')"
+                                title="Ver só os lançamentos de ${s}">
+                            <span class="serv-dot" style="background:${SERVICO_COR[s]}"></span>
+                            <span class="serv-nome">${s}</span>
+                            <span class="serv-mes">${brl(tot[s].mes)}</span>
+                            <span class="serv-sub">${tot[s].qtdMes} no mês · ${brl(tot[s].total)} no total</span>
+                        </button>`).join('')}
+                </div>
+                <div class="serv-soma">Fora das mensalidades, entraram <strong>${brl(somaMes)}</strong> neste mês.</div>`;
+        }
+
         // ---- Render ----
         function renderFinanceiro() {
             ensureFinanceData();
@@ -5870,6 +6025,8 @@
             renderPlans();
             renderExpenses();
             renderPendencias();
+            renderServicos();
+            renderFinFiltros();
             renderTransactions();
         }
 
@@ -6135,13 +6292,19 @@
             const container = document.getElementById('transactionsList');
             if (!container) return;
             ensureFinanceData();
-            const transactions = (data.transactions || []).slice()
+            const todos = (data.transactions || []).slice()
                 .sort((a, b) => String(b.date).localeCompare(String(a.date)) ||
-                                String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
-                .slice(0, 25);
+                                String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+            const filtrados = finFiltro === 'todos'
+                ? todos
+                : todos.filter(t => categoriaLancamento(t) === finFiltro);
+            const transactions = filtrados.slice(0, 40);
 
             if (!transactions.length) {
-                container.innerHTML = '<div class="fin-empty">Nenhum lançamento ainda.</div>';
+                const nome = (FIN_FILTROS.find(f => f.key === finFiltro) || {}).label || '';
+                container.innerHTML = `<div class="fin-empty">${finFiltro === 'todos'
+                    ? 'Nenhum lançamento ainda.'
+                    : `Nenhum lançamento em <strong>${nome}</strong> até agora.`}</div>`;
                 return;
             }
 
@@ -6149,7 +6312,10 @@
                 const desp = t.kind === 'despesa';
                 const client = (data.clients || []).find(c => c.id === t.clientId);
                 const titulo = desp ? (t.descricao || t.type || 'Despesa') : (client ? client.name : 'Cliente removido');
-                const sub = [desp ? t.type : t.type,
+                const cat = categoriaLancamento(t);
+                const marca = SERVICOS.includes(cat)
+                    ? `<span class="serv-tag" style="border-color:${SERVICO_COR[cat]}; color:${SERVICO_COR[cat]}">${cat}</span>` : '';
+                const sub = [desp ? t.type : (SERVICOS.includes(cat) ? null : t.type),
                              t.deParcelas ? `parcela ${t.parcela}/${t.deParcelas}` : null,
                              t.periodo ? rotuloPeriodo(t.periodo) : null,
                              new Date(String(t.date) + 'T00:00:00').toLocaleDateString('pt-BR')]
@@ -6158,7 +6324,7 @@
                     <div class="list-item" style="cursor:pointer;" title="Tocar para corrigir data ou valor"
                          onclick="openTxModal('${t.id}')">
                         <div class="list-item-content">
-                            <div class="list-item-title">${titulo}</div>
+                            <div class="list-item-title">${titulo} ${marca}</div>
                             <div class="list-item-subtitle">${sub}</div>
                         </div>
                         <div style="text-align: right;">
@@ -6166,7 +6332,19 @@
                             <div class="tx-editar">editar</div>
                         </div>
                     </div>`;
-            }).join('');
+            }).join('') + (() => {
+                if (finFiltro === 'todos') {
+                    return filtrados.length > 40
+                        ? `<div class="fin-empty">Mostrando os 40 mais recentes de ${filtrados.length}.</div>` : '';
+                }
+                const soma = filtrados.reduce((a, t) => a + (Number(t.amount) || 0), 0);
+                const ehDesp = finFiltro === 'despesa';
+                return `<div class="fin-filtro-total">
+                    ${filtrados.length} lançamento(s) ·
+                    <strong class="${ehDesp ? 'neg' : 'pos'}">${ehDesp ? '− ' : ''}${brl(soma)}</strong>
+                    ${filtrados.length > 40 ? ` · mostrando os 40 mais recentes` : ''}
+                </div>`;
+            })();
         }
 
         function updateEmphasisOptions() {
